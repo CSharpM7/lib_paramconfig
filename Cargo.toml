@@ -1,0 +1,34 @@
+[package]
+name = "libparam_commonconfig"
+version = "1.0.0"
+authors = ["C# <@CSharpM7>"]
+edition = "2018"
+
+[package.metadata.skyline]
+titleid = "01006A800016E000"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+sharpsmashlinesuite = { path = "../../SharpSmashlineSuite" }
+skyline = { git = "https://github.com/ultimate-research/skyline-rs.git" }
+skyline_smash = { git = "https://github.com/blu-dev/skyline-smash.git", features = ["weak_l2cvalue"] }
+smash_script = { git = "https://github.com/blu-dev/smash-script.git", branch = "development" }
+smashline = { git = "https://github.com/blu-dev/smashline.git", branch = "development" }
+smash_singletons = { git = "https://github.com/WuBoytH/smash_singletons.git" }
+arcropolis-api = { git = "https://github.com/Raytwo/arcropolis_api"}
+lazy_static = "1.4.0"
+toml = "0.5.2"
+serde = "1.0.136"
+serde_derive = "1.0.136"
+parking_lot = "0.11.2"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+opt-level = 'z'
+panic = "abort"
+lto = true
+codegen-units = 1

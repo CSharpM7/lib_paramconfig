@@ -1,0 +1,11 @@
+**/target
+**/*.py
+**/*.pyc
+Cargo.lock
+**/.vscode
+**/src/custom
+**/src/mario
+*.lnk
+*.ps1
+.devcontainer/Dockerfile
+.devcontainer/Dockerfile

@@ -1,0 +1,14 @@
+kind = "mariod"
+slots = [0,1,2]
+
+[[param_int]]
+key = "jump_squat_frame"
+value = 9
+
+[[param_int]]
+key = "wall_jump_type"
+value = 0
+
+[[param_float]]
+key = "jump_y"
+value = 60.0
