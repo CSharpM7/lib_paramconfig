@@ -10,6 +10,7 @@ All end-users will need to download an updated `lib_commonconfig.nro` from the r
 
 ## Known Issues:
 Currently, this does not support editing parameters featured in `vl.prc` files. Most of those values can be "single slotted" by reimplementing the main status of the affected parameters, however hurtbox information and ledgegrab box data cannot.
+This also can only change `int`, `float`, and `bool` values. For bools, please use a `param_int` object.
 
 ## Toml Layout:
 
