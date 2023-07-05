@@ -14,7 +14,7 @@ This also can only change `int`, `float`, and `bool` values. For bools, please u
 
 ## Toml Layout
 
-```toml
+```
 kind = "string" (this should whatever comes after FIGHTER_KIND_)
 slots = [int,int,...] (a list of slots (alt costume numbers) to be affected)
 
