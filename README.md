@@ -16,7 +16,7 @@ All end-users will need to download an updated `libparam_config.nro` from the re
 
 ## Limitations
 This also can only change `int`, `float`, and `bool` values. For bools, please use a `param_int` object with a value of 0 or 1.
-Currently, this does not support editing all parameters featured in `vl.prc` files (namely parameters with several arrays like MinMin's arms), though it does support most of the basic ones. Information like ledgegrab box has gone untested, as well as several other `vl.prc` parameters.
+Currently, this does not support editing all parameters featured in `vl.prc` files (namely parameters with several arrays like MinMin's arms), though it does support most of the basic ones. Changing information like ledgegrab boxes and hurtboxes has gone untested (ledgegrab boxes can be altered via smashline), as well as several other `vl.prc` parameters.
 
 ## Toml Layout
 
