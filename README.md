@@ -5,12 +5,16 @@ A common problem across "single slot movesets"(SSMs) is that because they often 
 ## Dependencies
 [lib_nrohook](https://github.com/ultimate-research/nro-hook-plugin/releases) (install in your plugins folder, all end-users will need this as well)
 
+## Caution!
+This can have adverse affects in casual modes, as well as with other external mechanics that attempt to edit parameters. This assumes you, and your target audience, are willing to risk the possibility of unintended consequences regarding single slot movesets.
+
 ## Usage
 All end-users will need to download an updated `libparam_config.nro` from the releases page (please do not bundle with your release as this plugin is still in its infancy). Create a file called `config_param.toml` and place it in the root of your mod (feel free to copy the one provided in the source code). Fill out the toml with the fighter kind of your mod, the slots that will be affected, and the common parameters you wish to modify. I recommend testing this first before distributing and updating your mods.
 
-## Known Issues
+## Limitations
 This also can only change `int`, `float`, and `bool` values. For bools, please use a `param_int` object with a value of 0 or 1.
 Currently, this does not support editing all parameters featured in `vl.prc` files (namely parameters with several arrays like MinMin's arms), though it does support most of the basic ones. Information like ledgegrab box has gone untested, as well as several other `vl.prc` parameters.
+This is also not compatible with any other gameplay modifying plugin that hooks param functions. Please make sure to disable this plugin before using such other mods/plugins.
 
 ## Toml Layout
 
