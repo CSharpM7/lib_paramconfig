@@ -22,9 +22,8 @@ use toml;
 pub struct CharacterParam {
     pub kind: i32,
     pub slots: Vec<i32>,
-    pub ints: HashMap<u64,i32>,
-    pub floats: HashMap<u64,f32>
-    //pub params_int: HashMap<i32, HashMap<u64, i32>>
+    pub ints: HashMap<(u64,u64),i32>,
+    pub floats: HashMap<(u64,u64),f32>
 }
 impl PartialEq for CharacterParam {
     fn eq(&self, other: &Self) -> bool {
@@ -33,9 +32,24 @@ impl PartialEq for CharacterParam {
     }
 }
 impl Eq for CharacterParam {}
+impl CharacterParam {
+    pub fn get_int(&self, param_type: u64, param_hash: u64) -> Option<i32> {
+        if let Some(value) = self.ints.get(&(param_type,param_hash)){
+            return Some(*value);
+        }
+        return None;
+    }
+    pub fn get_float(&self, param_type: u64, param_hash: u64) -> Option<f32> {
+        if let Some(value) = self.floats.get(&(param_type,param_hash)){
+            return Some(*value);
+        }
+        return None;
+    }
+}
 
 pub struct ParamManager {
     pub kinds: Vec<i32>,
+    pub has_all: bool,
     pub params: Vec<CharacterParam>
 }
 
@@ -43,28 +57,19 @@ impl ParamManager {
     pub(crate) fn new() -> Self {
         Self {
             kinds: Vec::new(),
+            has_all: false,
             params: Vec::new(),
         }
     }
-    /*
-    pub fn get_params(&self,kind: i32, slot: i32) -> Option<&HashMap<u64,i32>> {
-        for character in &self.params{
-            if (character.kind == kind) {
-                if let Some(param) = character.params_int.get(&slot){
-                    return &param;
-                }
-            }
-        }
-        return None
-    }
-    */
     pub fn push(&mut self, params: CharacterParam) {
         let kind = params.kind;
         if !(self.kinds.contains(&kind)) {
             self.kinds.push(kind);
+            if kind == -1 {
+                self.has_all = true;
+            }
         }
         self.params.push(params);
-        println!("[libparam_commonconfig::data] Received mario params");
     }
     
     pub fn get_params_by_slot(&self,kind: i32, slot: i32) -> Option<&CharacterParam> {
@@ -95,17 +100,17 @@ impl FighterParamModule {
     #[export_name = "FighterParamModule__has_kind"]
     pub extern "Rust" fn has_kind(kind: i32) -> bool {
         let mut manager = PARAM_MANAGER.read();
-        return manager.kinds.contains(&kind);
+        return manager.kinds.contains(&kind) || manager.has_all;
     }
 
     #[export_name = "FighterParamModule__get_int_param"]
-    pub extern "Rust" fn get_int_param(kind: i32, slot: i32, hash: u64) -> Option<i32> {
+    pub extern "Rust" fn get_int_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
                 if params.slots.contains(&slot) {
-                    if let Some(value) = params.ints.get(&hash){
-                        return Some(*value);
+                    if let Some(value) = params.get_int(param_type, param_hash){
+                        return Some(value);
                     }
                 }
             }
@@ -113,14 +118,14 @@ impl FighterParamModule {
         return None;
     }
     #[export_name = "FighterParamModule__get_float_param"]
-    pub extern "Rust" fn get_float_param(kind: i32, slot: i32, hash: u64) -> Option<f32> {
+    pub extern "Rust" fn get_float_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
                 if params.slots.contains(&slot) {                    
-                    if let Some(value) = params.floats.get(&hash){
-                        return Some(*value);
-                    }
+                    if let Some(value) = params.get_float(param_type, param_hash){
+                        return Some(value);
+                    }      
                 }
             }
         }
@@ -132,6 +137,7 @@ const IDENTIFIER: &str = "config_param.toml";
 
 pub fn get_kind_from_string(target_kind: &str) -> i32 {
     let kind_map = HashMap::from([
+    ("all","-1"),
     ("sonic","29"),
     ("demon","5c"),
     ("dolly","55"),
@@ -268,12 +274,14 @@ struct ConfigToml {
 
 #[derive(Deserialize)]
 struct param_int {
-    key: String,
+    param: String,
+    subparam: Option::<String>,
     value: i32
 }
 #[derive(Deserialize)]
 struct param_float {
-    key: String,
+    param: String,
+    subparam: Option::<String>,
     value: f32
 }
 
@@ -282,18 +290,18 @@ pub unsafe fn read_config(config_file: String)
     let contents = match fs::read_to_string(config_file.as_str()) {
         Ok(c) => c,
         Err(_) => {
-            println!("[libparam_commonconfig::data] `{}`", config_file.as_str());
+            println!("[libparam_config::data] `{}`", config_file.as_str());
             return;
         }
     };
     let data: ConfigToml = match toml::from_str(&contents) {
         Ok(d) => d,
         Err(_) => {
-            println!("[libparam_commonconfig::data] Unable to load data from `{}`", config_file.as_str());
+            println!("[libparam_config::data] Unable to load data from `{}`", config_file.as_str());
             return;
         }
     };
-    println!("[libparam_commonconfig::data] Found file: {}",config_file.as_str());
+    println!("[libparam_config::data] Found file: {}",config_file.as_str());
 
     let kind_i32 = get_kind_from_string(&data.kind); //data.kind
     let mut manager = PARAM_MANAGER.write();
@@ -303,21 +311,48 @@ pub unsafe fn read_config(config_file: String)
         ints: HashMap::new(),
         floats: HashMap::new()
     };
+
+    print!("[libparam_config::data] Loading params for {} on slots: ",data.kind);
+    for slot in &new_param.slots {
+        print!("{}, ",*slot);
+    } 
+    println!("");
  
     if data.param_int.is_some(){
         for param in data.param_int.unwrap() {
-            let keystr = param.key.as_str();
-            new_param.ints.insert(hash40(keystr),param.value);
-            //println!("[libparam_commonconfig::data] {} singleslot params: {} is now {}",kind_i32,keystr,param.value);
+            let subparam_string = match param.subparam {
+                Some(h) => h,
+                None => String::from("")
+            };
+            let subparam = match subparam_string.as_str() {
+                "" => 0,
+                _ => hash40(subparam_string.as_str()),
+            };
+
+            let index = (hash40(param.param.as_str()),subparam);
+            new_param.ints.insert(index,param.value);
+
+            println!("{},{}: {}",param.param,subparam_string,param.value);
         } 
     }
     if data.param_float.is_some(){
         for param in data.param_float.unwrap() {
-            let keystr = param.key.as_str();
-            new_param.floats.insert(hash40(keystr),param.value);
-            //println!("[libparam_commonconfig::data] {} singleslot params: {} is now {}",kind_i32,keystr,param.value);
+            let subparam_string = match param.subparam {
+                Some(h) => h,
+                None => String::from("")
+            };
+            let subparam = match subparam_string.as_str() {
+                "" => 0,
+                _ => hash40(subparam_string.as_str()),
+            };
+
+            let index = (hash40(param.param.as_str()),subparam);
+            new_param.floats.insert(index,param.value);
+
+            println!("{},{}: {}",param.param,subparam_string,param.value);
         } 
     }
+    println!("");
 
     manager.push(new_param);
 }
@@ -334,14 +369,12 @@ pub fn find_folders() ->bool {
                     path.pop();
 
                     let folder = format!("{}",path.display());
-                    //println!("[libparam_commonconfig::data] Found folder: {}",folder.as_str());
 
                     let is_enabled = arcropolis_api::is_mod_enabled(arcropolis_api::hash40(folder.as_str()).as_u64());
                     if is_enabled {
                         read_config(format!("{}/{}", folder.as_str(),IDENTIFIER));
                         folders_found = true;
                     }
-                    //do something
                 }
             }
         }

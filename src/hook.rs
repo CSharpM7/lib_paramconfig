@@ -35,21 +35,25 @@ fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) -> i32 {
     let mut boma = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let boma_reference = &mut *boma;
-    let fighter_kind = utility::get_kind(boma_reference);
     let id = WorkModule::get_int(boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let slot = WorkModule::get_int(boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
-    //let mut manager = PARAM_MANAGER.read();
+    let mut slot = WorkModule::get_int(boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
 
+    let mut fighter_kind = utility::get_kind(boma_reference);
+    if utility::get_category(boma_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
+        let owner_id = WorkModule::get_int(boma, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
+        if sv_battle_object::is_active(owner_id) {
+            fighter_kind = sv_battle_object::kind(owner_id);
+            slot = WorkModule::get_int(sv_battle_object::module_accessor(owner_id), *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+        }
+        else {
+            fighter_kind = -1;
+        }
+    }
 
-    if utility::get_category(boma_reference) == *BATTLE_OBJECT_CATEGORY_FIGHTER {
-        if FighterParamModule::has_kind(fighter_kind)
-        {
-            if let Some(new_param) = FighterParamModule::get_int_param(fighter_kind, slot,param_type){
-                return new_param;
-            }
-            else if let Some(new_param) = FighterParamModule::get_int_param(fighter_kind, slot,param_hash){
-                return new_param;
-            }
+    if FighterParamModule::has_kind(fighter_kind)
+    {
+        if let Some(new_param) = FighterParamModule::get_int_param(fighter_kind, slot,param_type, param_hash){
+            return new_param;
         }
     }
 
@@ -61,16 +65,25 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
 pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64) -> f32 {
     let mut boma = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let boma_reference = &mut *boma;
-    let fighter_kind = utility::get_kind(boma_reference);
     let id = WorkModule::get_int(boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let slot = WorkModule::get_int(boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+    let mut slot = WorkModule::get_int(boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
 
-    if utility::get_category(boma_reference) == *BATTLE_OBJECT_CATEGORY_FIGHTER {
-        if FighterParamModule::has_kind(fighter_kind)
-        {
-            if let Some(new_param) = FighterParamModule::get_float_param(fighter_kind, slot,param_type){
-                return new_param;
-            }
+    let mut fighter_kind = utility::get_kind(boma_reference);
+    if utility::get_category(boma_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
+        let owner_id = WorkModule::get_int(boma, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
+        if sv_battle_object::is_active(owner_id) {
+            fighter_kind = sv_battle_object::kind(owner_id);
+            slot = WorkModule::get_int(sv_battle_object::module_accessor(owner_id), *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+        }
+        else {
+            fighter_kind = -1;
+        }
+    }
+
+    if FighterParamModule::has_kind(fighter_kind)
+    {
+        if let Some(new_param) = FighterParamModule::get_float_param(fighter_kind, slot,param_type, param_hash){
+            return new_param;
         }
     }
     original!()(module, param_type, param_hash)

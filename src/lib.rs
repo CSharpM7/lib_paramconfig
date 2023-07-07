@@ -29,14 +29,14 @@ use parking_lot::RwLock;
 pub mod data;
 mod hook;
 
-#[skyline::main(name = "libparam_commonconfig")]
+#[skyline::main(name = "libparam_config")]
 pub fn main() {
-    println!("[libparam_commonconfig::main] Loading...");
+    println!("[libparam_config::main] Loading...");
     if data::install() {
-        println!("[libparam_commonconfig::main] Hooking...");
+        println!("[libparam_config::main] Hooking...");
         hook::install();
     }
     else{
-        println!("[libparam_commonconfig::main] No commonconfig data found");
+        println!("[libparam_config::main] No commonconfig data found");
     }
 }

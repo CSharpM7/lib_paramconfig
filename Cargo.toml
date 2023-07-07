@@ -1,5 +1,5 @@
 [package]
-name = "param_commonconfig"
+name = "param_config"
 version = "1.0.0"
 authors = ["C# <@CSharpM7>"]
 edition = "2018"
