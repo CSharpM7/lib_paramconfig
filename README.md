@@ -25,8 +25,8 @@ kind = "mario" (this should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or
 slots = [0,1,...] (a list of slots (alt costume numbers) to be affected)
 
 [[param_int]]
-param = "param_fireball" (the cracked hash name found in the fighter_param file)
-subparam = "life" (the cracked hash of the subcategory of this param. It usually includes things like "life" or "angle")
+param = "param_fireball" (the cracked hash name found when viewing in prceditor)
+subparam = "life" (the cracked hash of the subcategory of this param. It might includes things like "life" or "angle")
 value = 99 
 
 [[param_int]] (a second param you wish to edit)
