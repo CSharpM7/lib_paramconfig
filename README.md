@@ -1,5 +1,8 @@
 # lib_paramconfig
 
+**For end-users, go to the [releases tab](https://github.com/CSharpM7/lib_paramconfig/releases) and select the latest version. For developers, keep reading.**
+
+
 A common problem across "single slot movesets"(SSMs) is that because they often hook the same functions, they will cause crashes when multiple SSMs are active at once. This plugin serves as a middleman between the source code and mods, so that even though multiple SSMs are active, this is the only plugin that actually hooks param functions.
 
 ## Dependencies
