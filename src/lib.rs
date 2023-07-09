@@ -17,7 +17,8 @@ extern crate lazy_static;
 use smash::{
     hash40,
     app::{lua_bind::*, *},
-    lib::lua_const::*
+    lib::lua_const::*,
+    phx::*,
 };
 use std::{
     collections::HashMap, 

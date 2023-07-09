@@ -52,6 +52,9 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
 
     if FighterParamModule::has_kind(fighter_kind)
     {
+        if param_type == hash40("jump_squat_frame"){
+            println!("js frame");
+        }
         if let Some(new_param) = FighterParamModule::get_int_param(fighter_kind, slot,param_type, param_hash){
             return new_param;
         }

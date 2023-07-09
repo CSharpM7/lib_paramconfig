@@ -9,6 +9,7 @@ use std::{
     fs,
     thread::{self}
 };
+
 use arcropolis_api;
 
 use lazy_static::lazy_static;
@@ -285,23 +286,22 @@ struct param_float {
     value: f32
 }
 
-pub unsafe fn params_to_u64(param: &str, subparam: &str) -> (u64,u64)
+pub unsafe fn hash_str_to_u64(param: &str) -> u64
 {
-    let subparam_u64: i64 = 0;
-    if subparam.starts_with("0x"){
-        let hex = i64::from_str_radix(subparam.trim_start_matches("0x"), 16);
-        let subparam_64 = hex.unwrap();
+    if param.starts_with("0x"){
+        match u64::from_str_radix(param.trim_start_matches("0x"), 16){
+            Ok(hex) => return hex,
+            Err(err) => {println!("[libparam_config::data] Failed to parse {}",param); return 0}
+        };
     }
     else 
     {
-        let subparam_64 = match subparam {
+        return match param {
             "" => 0,
             " " => 0,
-            _ => hash40(subparam),
+            _ => hash40(param),
         };
     }
-
-    return (hash40(param),subparam_u64 as u64);
 }
 
 pub unsafe fn read_config(config_file: String)
@@ -346,7 +346,7 @@ pub unsafe fn read_config(config_file: String)
             };
             let subparam_str = subparam_string.as_str();
 
-            let index = params_to_u64(param.param.as_str(),subparam_str);
+            let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
             new_param.ints.insert(index,param.value);
 
             println!("{}({}): {}",param.param,subparam_str,param.value);
@@ -361,7 +361,7 @@ pub unsafe fn read_config(config_file: String)
             };
             let subparam_str = subparam_string.as_str();
 
-            let index = params_to_u64(param.param.as_str(),subparam_str);
+            let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
             new_param.floats.insert(index,param.value);
 
             println!("{}({}): {}",param.param,subparam_str,param.value);
