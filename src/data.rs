@@ -285,6 +285,25 @@ struct param_float {
     value: f32
 }
 
+pub unsafe fn params_to_u64(param: &str, subparam: &str) -> (u64,u64)
+{
+    let subparam_u64: i64 = 0;
+    if subparam.starts_with("0x"){
+        let hex = i64::from_str_radix(subparam.trim_start_matches("0x"), 16);
+        let subparam_64 = hex.unwrap();
+    }
+    else 
+    {
+        let subparam_64 = match subparam {
+            "" => 0,
+            " " => 0,
+            _ => hash40(subparam),
+        };
+    }
+
+    return (hash40(param),subparam_u64 as u64);
+}
+
 pub unsafe fn read_config(config_file: String)
 {
     let contents = match fs::read_to_string(config_file.as_str()) {
@@ -320,36 +339,32 @@ pub unsafe fn read_config(config_file: String)
  
     if data.param_int.is_some(){
         for param in data.param_int.unwrap() {
+            let subparam = 0;
             let subparam_string = match param.subparam {
                 Some(h) => h,
                 None => String::from("")
             };
-            let subparam = match subparam_string.as_str() {
-                "" => 0,
-                _ => hash40(subparam_string.as_str()),
-            };
+            let subparam_str = subparam_string.as_str();
 
-            let index = (hash40(param.param.as_str()),subparam);
+            let index = params_to_u64(param.param.as_str(),subparam_str);
             new_param.ints.insert(index,param.value);
 
-            println!("{},{}: {}",param.param,subparam_string,param.value);
+            println!("{}({}): {}",param.param,subparam_str,param.value);
         } 
     }
     if data.param_float.is_some(){
         for param in data.param_float.unwrap() {
+            let subparam = 0;
             let subparam_string = match param.subparam {
                 Some(h) => h,
                 None => String::from("")
             };
-            let subparam = match subparam_string.as_str() {
-                "" => 0,
-                _ => hash40(subparam_string.as_str()),
-            };
+            let subparam_str = subparam_string.as_str();
 
-            let index = (hash40(param.param.as_str()),subparam);
+            let index = params_to_u64(param.param.as_str(),subparam_str);
             new_param.floats.insert(index,param.value);
 
-            println!("{},{}: {}",param.param,subparam_string,param.value);
+            println!("{}({}): {}",param.param,subparam_str,param.value);
         } 
     }
     println!("");
