@@ -261,7 +261,7 @@ pub fn get_kind_from_string(target_kind: &str) -> i32 {
         let int = i64::from_str_radix(hex, 16);
         return int.unwrap() as i32;
     }
-    return -1;
+    return -2;
 }
 
 // Top level struct to hold the TOML data.
@@ -323,6 +323,10 @@ pub unsafe fn read_config(config_file: String)
     println!("[libparam_config::data] Found file: {}",config_file.as_str());
 
     let kind_i32 = get_kind_from_string(&data.kind); //data.kind
+    if (kind_i32 == -2)
+    {
+        print!("[libparam_config::data] {} is an invalid fighter",data.kind);
+    }
     let mut manager = PARAM_MANAGER.write();
     let mut new_param = CharacterParam {
         kind: kind_i32,
