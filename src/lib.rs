@@ -1,3 +1,4 @@
+/* 
 #![feature(
     concat_idents,
     proc_macro_hygiene
@@ -46,3 +47,4 @@ pub fn main() {
         println!("[libparam_config::main] No param data found");
     }
 }
+*/
