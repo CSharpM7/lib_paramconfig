@@ -12,13 +12,6 @@
 
 #[macro_use]
 extern crate lazy_static;
-/*
-use smash::{
-    hash40,
-    app::{lua_bind::*, *},
-    lib::lua_const::*,
-    phx::*,
-}; */
 use std::{
     env,
     io::*,

@@ -1,5 +1,5 @@
 [package]
-name = "tomltest"
+name = "param_config_test"
 version = "0.1.0"
 edition = "2021"
 
@@ -21,3 +21,6 @@ opt-level = 'z'
 panic = "abort"
 lto = true
 codegen-units = 1
+
+[features]
+switch = []

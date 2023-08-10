@@ -1,5 +1,4 @@
-/* 
-use {
+ use {
     smash::{
         hash40,
         app::{lua_bind::*, *},
@@ -32,6 +31,8 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
 
     let mut fighter_kind = utility::get_kind(boma_reference);
     if utility::get_category(boma_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
+        fighter_kind *= -1;
+        /* 
         let owner_id = WorkModule::get_int(boma, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
         if sv_battle_object::is_active(owner_id) {
             fighter_kind = sv_battle_object::kind(owner_id);
@@ -40,13 +41,11 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
         else {
             fighter_kind = -1;
         }
+        */
     }
 
     if FighterParamModule::has_kind(fighter_kind)
     {
-        if param_type == hash40("jump_squat_frame"){
-            println!("js frame");
-        }
         if let Some(new_param) = FighterParamModule::get_int_param(fighter_kind, slot,param_type, param_hash){
             return new_param;
         }
@@ -65,6 +64,8 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
 
     let mut fighter_kind = utility::get_kind(boma_reference);
     if utility::get_category(boma_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
+        fighter_kind *= -1;
+        /* 
         let owner_id = WorkModule::get_int(boma, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
         if sv_battle_object::is_active(owner_id) {
             fighter_kind = sv_battle_object::kind(owner_id);
@@ -73,6 +74,7 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
         else {
             fighter_kind = -1;
         }
+        */
     }
 
     if FighterParamModule::has_kind(fighter_kind)
@@ -91,4 +93,3 @@ pub fn install() {
         get_param_float_hook,
     );
 }
-*/
