@@ -8,7 +8,7 @@ A common problem across "single slot movesets"(SSMs) is that because they often 
 [lib_nrohook](https://github.com/ultimate-research/nro-hook-plugin/releases) (install in your plugins folder, all end-users will need this as well)
 
 ## Caution!
-This can have adverse effects in casual modes, when interacting with Villager/Isabelle's pocket ability, as well as with other external mechanics that attempt to edit parameters. This assumes you, and your target audience, are willing to risk the possibility of unintended consequences regarding single slot movesets, or have mitigated some of these possible unintended effects. This is also not compatible with any other gameplay modifying plugin that hooks param functions. Please make sure to disable this plugin before using such other mods/plugins.
+This can have adverse effects in casual modes, as well as with other external mechanics that attempt to edit parameters. This assumes you, and your target audience, are willing to risk the possibility of unintended consequences regarding SSMs, or have mitigated some of these possible unintended effects. This is also not compatible with any other gameplay modifying plugin that hooks param functions. Please make sure to disable this plugin before using such other mods/plugins.
 
 ## Usage
 All end-users will need to download an updated `libparam_config.nro` from the releases page (please do not bundle with your release as this plugin is still in its infancy). Create a file called `config_param.toml` and place it in the root of your mod (feel free to copy the one provided in the source code). Fill out the toml with the fighter kind of your mod, the slots that will be affected, and the common parameters you wish to modify.
@@ -17,12 +17,13 @@ All end-users will need to download an updated `libparam_config.nro` from the re
 - This also can only change `int`, `float`, and `bool` values. For bools, please use a `param_int` object with a value of 0 or 1.
 - Not all params will work (usually floats).
 - Currently, this does not support editing all parameters featured in `vl.prc` files (namely parameters with several arrays like MinMin's arms), though it does support most of the basic ones. Changing information like ledgegrab boxes and hurtboxes has gone untested (ledgegrab boxes can be altered via smashline), as well as several other `vl.prc` parameters.
+- Does not work with pocketed items or copy abilities
 
 ## Toml Layout
 
 ```
-kind = "mario" (this should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
-slots = [0,1,...] (a list of slots (alt costume numbers) to be affected)
+kind = "mario" (The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
+slots = [0,1,...] (The default list of effected slots (alt costume numbers). Any param that doesn't have a `slots` value will default to this list)
 
 [[param_int]]
 param = "param_fireball" (the cracked hash name found when viewing in prceditor)
@@ -38,4 +39,11 @@ value = 0 (if you are working with a bool, use 0 for false, and 1 for true)
 param = "0x06a0d82dad" (you can also use the raw hash version, as long as it begins with 0x)
 subparam = ""
 value = 60.0
+
+[[param_float]]
+param = "param_fireball"
+subparam = "gravity_accel"
+value = 0.0
+kinds = ["mario","mario_fireball"] (For weapons, I recommend including their weapon kind in the list as well)
+slots = [0,1,2]
 ```
