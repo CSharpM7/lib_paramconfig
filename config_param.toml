@@ -1,48 +1,41 @@
+kind = "mariod"
+slots = [0,1,2]
+
 [[param_int]]
 param = "jump_squat_frame"
 subparam = ""
 value = 6
-kind = "mariod"
-slots = [0,1,2]
 
 [[param_int]]
 param = "wall_jump_type"
 subparam = ""
 value = 0
-kind = "mariod"
-slots = [0,1,2]
 
 [[param_float]]
 param = "jump_y"
 subparam = ""
 value = 60.0
-kind = "mariod"
-slots = [0,1,2]
 
 [[param_float]]
 param = "param_drcapsule"
 subparam = "gravity_accel"
 value = 0.0
-kind = "mariod"
+kinds = ["mariod","mariod_drcapsule"]
 slots = [0,1,2]
 
 [[param_float]]
 param = "param_drcapsule"
 subparam = "angle"
 value = 0.0
-kind = "mariod"
+kinds = ["mariod","mariod_drcapsule"]
 slots = [0,1,2]
 
 [[param_float]]
 param = "param_special_lw"
 subparam = "buoyancy"
 value = 4.0
-kind = "mariod"
-slots = [0,1,2]
 
 [[param_float]]
 param = "param_special_lw"
 subparam = "buoyancy_max"
 value = 4.0
-kind = "mariod"
-slots = [0,1,2]

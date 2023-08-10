@@ -69,9 +69,9 @@ impl ParamManager {
         let kind = params.kind;
         if !(self.kinds.contains(&kind)) {
             self.kinds.push(kind);
-            if kind == -1 {
-                self.has_all = true;
-            }
+            //if kind == -1 {
+            //    self.has_all = true;
+            //}
         }
         self.params.push(params);
     }
@@ -188,7 +188,7 @@ const IDENTIFIER: &str = "config_param.toml";
 
 pub fn get_fighter_kind_from_string(target_kind: &str) -> i32 {
     let kind_map = HashMap::from([
-    ("all","-1"),
+    //("all","-1"),
     ("sonic","29"),
     ("demon","5c"),
     ("dolly","55"),
@@ -945,7 +945,7 @@ struct param_int {
     param: String,
     subparam: Option::<String>,
     value: i32,
-    kind: Option::<String>,
+    kinds: Option::<Vec<String>>,
     slots: Option::<Vec<i32>>,
 }
 #[derive(Deserialize)]
@@ -953,7 +953,7 @@ struct param_float {
     param: String,
     subparam: Option::<String>,
     value: f32,
-    kind: Option::<String>,
+    kinds: Option::<Vec<String>>,
     slots: Option::<Vec<i32>>,
 }
 
@@ -991,6 +991,7 @@ pub unsafe fn read_config(config_file: String)
         }
     };
     println!("[libparam_config::data] Found file: {}",config_file.as_str());
+    println!("[libparam_config::data] Loading params:");
     let mut mainKind = String::from("");
     let mut mainSlots = Vec::new();
     if data.kind.is_some(){
@@ -1000,24 +1001,27 @@ pub unsafe fn read_config(config_file: String)
     let mut manager = PARAM_MANAGER.write();
     if data.param_int.is_some(){
         for param in data.param_int.unwrap() {
-            let mut kind = mainKind.clone();
-            let mut slots = mainSlots.clone();
-            if param.kind.is_some() {
-                kind = param.kind.unwrap();
+            let mut kinds:Vec<String> = Vec::new();
+            let mut slots:Vec<i32> = Vec::new();
+            if param.kinds.is_some() {
+                kinds = param.kinds.unwrap();
             }
+            else if mainKind != "" {
+                kinds.push(mainKind.clone());
+            }
+            if kinds.len() < 1 {
+                println!("[libparam_config::data] Entry has no fighters");
+                continue;
+            }
+
             if param.slots.is_some(){
                 slots = param.slots.unwrap();
             }
-
-            let isFighter = !(kind.contains("_") && kind != "ice_climber");
-            println!("{} is fighter: {}",kind,isFighter);
-            let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
-            if kind_i32 == 999 {
-                println!("[libparam_config::data] {} is an invalid fighter",kind);
-                continue;
+            else if mainSlots.len() > 0 {
+                slots = mainSlots.clone();
             }
-            if kind_i32 == -999 {
-                println!("[libparam_config::data] {} is an invalid weapon",kind);
+            if slots.len() < 1 {
+                println!("[libparam_config::data] Entry has no slots");
                 continue;
             }
 
@@ -1030,30 +1034,52 @@ pub unsafe fn read_config(config_file: String)
 
             let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
 
-            manager.update_int(kind_i32,slots,index,param.value);
+            for kind in kinds {
+                let isFighter = !(kind.contains("_") && kind != "ice_climber");
+                let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
+                if kind_i32 == 999 {
+                    println!("[libparam_config::data] {} is an invalid fighter",kind);
+                    continue;
+                }
+                if kind_i32 == -999 {
+                    println!("[libparam_config::data] {} is an invalid weapon",kind);
+                    continue;
+                }
+                manager.update_int(kind_i32,slots.clone(),index,param.value);
+                print!("{},",kind.as_str());
+            }
+            print!("(");
+            for slot in slots {
+                print!("{slot},");
+            }
+            print!("): {}({}): {}",param.param,subparam_str,param.value);
+            println!("");
 
-            println!("{}: {}({}): {}",kind.as_str(),param.param,subparam_str,param.value);
         } 
     }
     if data.param_float.is_some(){
         for param in data.param_float.unwrap() {
-            let mut kind = mainKind.clone();
-            let mut slots = mainSlots.clone();
-            if param.kind.is_some() {
-                kind = param.kind.unwrap();
+            let mut kinds:Vec<String> = Vec::new();
+            let mut slots:Vec<i32> = Vec::new();
+            if param.kinds.is_some() {
+                kinds = param.kinds.unwrap();
             }
+            else if mainKind != "" {
+                kinds.push(mainKind.clone());
+            }
+            if kinds.len() < 1 {
+                println!("[libparam_config::data] Entry has no fighters");
+                continue;
+            }
+
             if param.slots.is_some(){
                 slots = param.slots.unwrap();
             }
-
-            let isFighter = !(kind.contains("_") && kind != "ice_climber");
-            let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
-            if kind_i32 == 999 {
-                println!("[libparam_config::data] {} is an invalid fighter",kind);
-                continue;
+            else if mainSlots.len() > 0 {
+                slots = mainSlots.clone();
             }
-            if kind_i32 == -999 {
-                println!("[libparam_config::data] {} is an invalid weapon",kind);
+            if slots.len() < 1 {
+                println!("[libparam_config::data] Entry has no slots");
                 continue;
             }
 
@@ -1066,33 +1092,30 @@ pub unsafe fn read_config(config_file: String)
 
             let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
 
-            manager.update_float(kind_i32,slots,index,param.value);
-
-            println!("{}: {}({}): {}",kind.as_str(),param.param,subparam_str,param.value);
+            for kind in kinds {
+                let isFighter = !(kind.contains("_") && kind != "ice_climber");
+                let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
+                if kind_i32 == 999 {
+                    println!("[libparam_config::data] {} is an invalid fighter",kind);
+                    continue;
+                }
+                if kind_i32 == -999 {
+                    println!("[libparam_config::data] {} is an invalid weapon",kind);
+                    continue;
+                }
+                manager.update_float(kind_i32,slots.clone(),index,param.value);
+                print!("{},",kind.as_str());
+            }
+            print!("(");
+            for slot in slots {
+                print!("{slot},");
+            }
+            print!("): {}({}): {}",param.param,subparam_str,param.value);
+            println!("");
         }  
     }
-    println!("[libparam_config::data] Loaded params:");
-    for p in &manager.params {
-        let character = p.kind;
-        print!("Character: {character} Slots: ");
-        for s in &p.slots {
-            print!("{},",*s);
-        }
-        println!("");
-        for i in &p.ints {
-            let param = i.0.0;
-            let subparam = i.0.1;
-            let value = i.1;
-            println!("{param}({subparam}): {value}");
-        }
-        for f in &p.floats {
-            let param = f.0.0;
-            let subparam = f.0.1;
-            let value = f.1;
-            println!("{param}({subparam}): {value}");
-        }
-    } 
-    //manager.push(new_param);
+    #[cfg(not(feature = "switch"))] 
+    println!("[libparam_config::data] Finished!");
 }
 
 
