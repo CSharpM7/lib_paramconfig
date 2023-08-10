@@ -22,8 +22,8 @@ All end-users will need to download an updated `libparam_config.nro` from the re
 ## Toml Layout
 
 ```
-kind = "mario" (The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
-slots = [0,1,...] (The default list of effected slots (alt costume numbers). Any param that doesn't have a `slots` value will default to this list)
+kind = "mario" (~OPTIONAL~ The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
+slots = [0,1,...] (~OPTIONAL~ The default list of effected slots (alt costume numbers). Any param that doesn't have a `slots` value will default to this list)
 
 [[param_int]]
 param = "param_fireball" (the cracked hash name found when viewing in prceditor)
@@ -44,6 +44,6 @@ value = 60.0
 param = "param_fireball"
 subparam = "gravity_accel"
 value = 0.0
-kinds = ["mario","mario_fireball"] (For weapons, I recommend including their weapon kind in the list as well)
-slots = [0,1,2]
+kinds = ["mario","mario_fireball"] (~OPTIONAL~ For weapons, I recommend including their weapon kind in the list as well)
+slots = [0,1,2] (~OPTIONAL~)
 ```
