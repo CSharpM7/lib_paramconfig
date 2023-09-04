@@ -140,13 +140,10 @@ lazy_static! {
     pub static ref PARAM_MANAGER: RwLock<ParamManager> = RwLock::new(ParamManager::new());
 }
 
-
 pub struct FighterParamModule {
     pub manager: ParamManager
 }
 
-/// An additional module to be used with Smash's `BattleObject` class. This handles storing and retrieving primitive variables
-/// that you want to associate with a specific object (such as associating a gimmick timer with mario or dk)
 impl FighterParamModule {
     #[export_name = "FighterParamModule__has_kind"]
     pub extern "Rust" fn has_kind(kind: i32) -> bool {
@@ -177,6 +174,19 @@ impl FighterParamModule {
                     if let Some(value) = params.get_float(param_type, param_hash){
                         return Some(value);
                     }      
+                }
+            }
+        }
+        return None;
+    }
+    #[export_name = "FighterParamModule__get_article_use_type"]
+    pub extern "Rust" fn get_article_use_type(kind: i32) -> Option<i32> {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind) {
+                let article_hash = hash_str_to_u64("article_use_type");
+                if let Some(value) = params.get_int(article_hash,0){
+                    return Some(value);
                 }
             }
         }
@@ -931,6 +941,14 @@ pub fn get_weapon_kind_from_string(target_kind: &str) -> i32 {
     return -999;
 }
 
+lazy_static! {
+    static ref HOOK_ARTICLES: RwLock<bool> = RwLock::new(false);
+}
+
+pub fn can_Hook_Articles() -> bool {
+    return *HOOK_ARTICLES.read();
+}
+
 // Top level struct to hold the TOML data.
 #[derive(Deserialize)]
 struct ConfigToml {
@@ -957,7 +975,7 @@ struct param_float {
     slots: Option::<Vec<i32>>,
 }
 
-pub unsafe fn hash_str_to_u64(param: &str) -> u64
+pub fn hash_str_to_u64(param: &str) -> u64
 {
     if param.starts_with("0x"){
         match u64::from_str_radix(param.trim_start_matches("0x"), 16){
@@ -974,6 +992,7 @@ pub unsafe fn hash_str_to_u64(param: &str) -> u64
         };
     }
 }
+
 pub unsafe fn read_config(config_file: String)
 {
     let contents = match fs::read_to_string(config_file.as_str()) {
@@ -999,6 +1018,7 @@ pub unsafe fn read_config(config_file: String)
         mainSlots = data.slots.unwrap();
     }
     let mut manager = PARAM_MANAGER.write();
+    
     if data.param_int.is_some(){
         for param in data.param_int.unwrap() {
             let mut kinds:Vec<String> = Vec::new();
@@ -1055,6 +1075,9 @@ pub unsafe fn read_config(config_file: String)
             print!("): {}({}): {}",param.param,subparam_str,param.value);
             println!("");
 
+            //if param.param == "article_use_type" {
+            //    *HOOK_ARTICLES.write() = true;
+            //}
         } 
     }
     if data.param_float.is_some(){

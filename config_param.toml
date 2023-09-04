@@ -39,3 +39,8 @@ value = 4.0
 param = "param_special_lw"
 subparam = "buoyancy_max"
 value = 4.0
+
+[[param_int]]
+param = "article_use_type"
+value = 1
+kinds = ["mariod_capsuleblock"]
