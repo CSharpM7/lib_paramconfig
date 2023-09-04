@@ -1070,11 +1070,8 @@ pub unsafe fn read_config(config_file: String)
                 }
                 if param.param == "article_use_type" {
                     *HOOK_ARTICLES.write() = true;
-                    manager.update_int(kind_i32,Vec::from([0]),index,param.value);
                 }
-                else{
-                    manager.update_int(kind_i32,slots.clone(),index,param.value);
-                }
+                manager.update_int(kind_i32,slots.clone(),index,param.value);
                 print!("{},",kind.as_str());
             }
             if param.param == "article_use_type" {

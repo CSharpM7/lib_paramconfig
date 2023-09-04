@@ -78,8 +78,8 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
 
 #[skyline::hook(offset = 0x3a6650)]
 unsafe fn get_article_use_type_mask(weapon_kind: i32, entry_id: i32) -> u8 {
-    if FighterParamModule::has_kind(weapon_kind) {
-        if let Some(new_type) = FighterParamModule::get_article_use_type(weapon_kind){
+    if FighterParamModule::has_kind(-weapon_kind) {
+        if let Some(new_type) = FighterParamModule::get_article_use_type(-weapon_kind){
             return new_type as u8;
         }
     }
