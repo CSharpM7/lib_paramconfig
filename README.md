@@ -46,4 +46,9 @@ subparam = "gravity_accel"
 value = 0.0
 kinds = ["mario","mario_fireball"] (~OPTIONAL~ For weapons, I recommend including their weapon kind in the list as well)
 slots = [0,1,2] (~OPTIONAL~)
+
+[[param_int]]
+param = "article_use_type" (For changing the use type of an article. Usually used for allowing entry/victory articles to spawn in game)
+value = 1
+kinds = ["mariod_capsuleblock"]
 ```
