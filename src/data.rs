@@ -1015,6 +1015,8 @@ pub unsafe fn read_config(config_file: String)
     let mut mainSlots = Vec::new();
     if data.kind.is_some(){
         mainKind = data.kind.unwrap();
+    }
+    if data.slots.is_some(){
         mainSlots = data.slots.unwrap();
     }
     let mut manager = PARAM_MANAGER.write();
@@ -1054,6 +1056,7 @@ pub unsafe fn read_config(config_file: String)
 
             let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
 
+            print!("[");
             for kind in kinds {
                 let isFighter = !(kind.contains("_") && kind != "ice_climber");
                 let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
@@ -1065,19 +1068,27 @@ pub unsafe fn read_config(config_file: String)
                     println!("[libparam_config::data] {} is an invalid weapon",kind);
                     continue;
                 }
-                manager.update_int(kind_i32,slots.clone(),index,param.value);
+                if param.param == "article_use_type" {
+                    *HOOK_ARTICLES.write() = true;
+                    manager.update_int(kind_i32,Vec::from([0]),index,param.value);
+                }
+                else{
+                    manager.update_int(kind_i32,slots.clone(),index,param.value);
+                }
                 print!("{},",kind.as_str());
             }
-            print!("(");
-            for slot in slots {
-                print!("{slot},");
+            if param.param == "article_use_type" {
+                print!("] article use type: {}",param.value);
             }
-            print!("): {}({}): {}",param.param,subparam_str,param.value);
+            else{
+                print!("(");
+                for slot in slots {
+                    print!("{slot},");
+                }
+                print!(")] {}({}): {}",param.param,subparam_str,param.value);
+            }
             println!("");
 
-            //if param.param == "article_use_type" {
-            //    *HOOK_ARTICLES.write() = true;
-            //}
         } 
     }
     if data.param_float.is_some(){
@@ -1115,6 +1126,7 @@ pub unsafe fn read_config(config_file: String)
 
             let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
 
+            print!("[");
             for kind in kinds {
                 let isFighter = !(kind.contains("_") && kind != "ice_climber");
                 let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
@@ -1133,7 +1145,7 @@ pub unsafe fn read_config(config_file: String)
             for slot in slots {
                 print!("{slot},");
             }
-            print!("): {}({}): {}",param.param,subparam_str,param.value);
+            print!("] {}({}): {}",param.param,subparam_str,param.value);
             println!("");
         }  
     }

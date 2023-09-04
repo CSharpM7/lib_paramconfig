@@ -91,10 +91,10 @@ pub fn install() {
         get_param_int_hook,
         get_param_float_hook,
     );
-    /* 
     if super::data::can_Hook_Articles() {
+        println!("[libparam_config::main] Article use type hooked");
         skyline::install_hooks!(
             get_article_use_type_mask
         ); 
-    }*/
+    }
 }
