@@ -943,11 +943,16 @@ pub fn get_weapon_kind_from_string(target_kind: &str) -> i32 {
 
 lazy_static! {
     static ref HOOK_ARTICLES: RwLock<bool> = RwLock::new(false);
+    static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
 }
 
 pub fn can_Hook_Articles() -> bool {
     return *HOOK_ARTICLES.read();
 }
+pub fn can_Hook_Params() -> bool {
+    return *HOOK_PARAMS.read();
+}
+
 
 // Top level struct to hold the TOML data.
 #[derive(Deserialize)]
@@ -993,20 +998,21 @@ pub fn hash_str_to_u64(param: &str) -> u64
     }
 }
 
-pub unsafe fn read_config(config_file: String)
+pub unsafe fn read_config(config_file: String) -> bool
 {
+    let mut hasContent = false;
     let contents = match fs::read_to_string(config_file.as_str()) {
         Ok(c) => c,
         Err(_) => {
             println!("[libparam_config::data] `{}`", config_file.as_str());
-            return;
+            return false;
         }
     };
     let data: ConfigToml = match toml::from_str(&contents) {
         Ok(d) => d,
         Err(_) => {
             println!("[libparam_config::data] Unable to load data from `{}`", config_file.as_str());
-            return;
+            return false;
         }
     };
     println!("[libparam_config::data] Found file: {}",config_file.as_str());
@@ -1048,14 +1054,22 @@ pub unsafe fn read_config(config_file: String)
             }
 
             let subparam = 0;
-            let subparam_string = match param.subparam {
+            let mut subparam_string = match param.subparam {
                 Some(h) => h,
                 None => String::from("")
             };
+            if param.param == "article_use_type" {
+                subparam_string = String::from("");
+            }
+            else {
+            }
             let subparam_str = subparam_string.as_str();
 
-            let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
+            let index = (hash_str_to_u64(param.param.as_str()),
+            hash_str_to_u64(subparam_str)
+            );
 
+            let mut validKinds = false;
             print!("[");
             for kind in kinds {
                 let isFighter = !(kind.contains("_") && kind != "ice_climber");
@@ -1068,16 +1082,19 @@ pub unsafe fn read_config(config_file: String)
                     println!("[libparam_config::data] {} is an invalid weapon",kind);
                     continue;
                 }
-                if param.param == "article_use_type" {
-                    *HOOK_ARTICLES.write() = true;
-                }
+                validKinds = true;
                 manager.update_int(kind_i32,slots.clone(),index,param.value);
                 print!("{},",kind.as_str());
             }
+            if !validKinds {continue;}
+            hasContent = true;
+
             if param.param == "article_use_type" {
+                *HOOK_ARTICLES.write() = true;
                 print!("] article use type: {}",param.value);
             }
             else{
+                *HOOK_PARAMS.write() = true;
                 print!("(");
                 for slot in slots {
                     print!("{slot},");
@@ -1123,6 +1140,7 @@ pub unsafe fn read_config(config_file: String)
 
             let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
 
+            let mut validKinds = false;
             print!("[");
             for kind in kinds {
                 let isFighter = !(kind.contains("_") && kind != "ice_climber");
@@ -1135,9 +1153,14 @@ pub unsafe fn read_config(config_file: String)
                     println!("[libparam_config::data] {} is an invalid weapon",kind);
                     continue;
                 }
+                validKinds = true;
                 manager.update_float(kind_i32,slots.clone(),index,param.value);
                 print!("{},",kind.as_str());
             }
+            if !validKinds {continue;}
+            hasContent = true;
+            *HOOK_PARAMS.write() = true;
+
             print!("(");
             for slot in slots {
                 print!("{slot},");
@@ -1148,6 +1171,8 @@ pub unsafe fn read_config(config_file: String)
     }
     #[cfg(not(feature = "switch"))] 
     println!("[libparam_config::data] Finished!");
+    
+    return hasContent;
 }
 
 
@@ -1169,8 +1194,7 @@ pub fn find_folders() ->bool {
 
                     let is_enabled = arcropolis_api::is_mod_enabled(arcropolis_api::hash40(folder.as_str()).as_u64());
                     if is_enabled {
-                        read_config(format!("{}/{}", folder.as_str(),IDENTIFIER));
-                        folders_found = true;
+                        folders_found = folders_found | read_config(format!("{}/{}", folder.as_str(),IDENTIFIER));
                     }
                 }
             }

@@ -87,12 +87,15 @@ unsafe fn get_article_use_type_mask(weapon_kind: i32, entry_id: i32) -> u8 {
 }
 
 pub fn install() {
-    skyline::install_hooks!(
-        get_param_int_hook,
-        get_param_float_hook,
-    );
+    if super::data::can_Hook_Params() {
+        println!("[libparam_config::main] Hooking GetParam functions");
+        skyline::install_hooks!(
+            get_param_int_hook,
+            get_param_float_hook,
+        );
+    }
     if super::data::can_Hook_Articles() {
-        println!("[libparam_config::main] Article use type hooked");
+        println!("[libparam_config::main] Hooking Article Use Type function");
         skyline::install_hooks!(
             get_article_use_type_mask
         ); 

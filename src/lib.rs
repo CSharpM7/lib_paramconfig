@@ -38,7 +38,6 @@ pub fn main() {
         //Delay install for testing purposes...I don't think this should be necessary on V1
         let hook_thread = std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(100));
-            println!("[libparam_config::main] Hooking...");
             hook::install();
         });
         hook_thread.join();
