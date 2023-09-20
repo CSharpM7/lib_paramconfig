@@ -83,8 +83,6 @@ impl CharacterParam {
         if let Some(value) = self.floats.get(&(param_type,param_hash)){
             return Some(*value);
         }
-        let count = self.floats.len();
-        println!("Count: {count}");
         return None;
     }
     pub fn insert_float(&mut self, param_type: u64, param_hash: u64, value: f32) {
@@ -157,9 +155,12 @@ impl ParamManager {
         self.push(newparams);
     }
     pub fn update_float(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
+        let i0 = index.0;
+        let i1 = index.1;
         for param in &mut self.params {
             if (param.kind == kind) {
                 if param.slots == slots {
+                    println!("Inserting {value} for {kind}'s {i0};{i1}");
                     param.floats.insert(index, value);
                     return;
                 }
@@ -172,6 +173,7 @@ impl ParamManager {
             floats: HashMap::new()
         };
         newparams.floats.insert(index,value);
+        println!("Created {value} for {kind}'s {i0};{i1}");
         self.push(newparams);
     }
     
@@ -181,14 +183,19 @@ lazy_static! {
     pub static ref PARAM_MANAGER: RwLock<ParamManager> = RwLock::new(ParamManager::new());
 }
 
-pub unsafe fn add_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32)
+#[no_mangle]
+pub extern "C" fn add_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32)
 {
     let mut manager = PARAM_MANAGER.write();
     manager.update_int(kind,slots.clone(),index,value);
 }
-pub unsafe fn add_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
+#[no_mangle]
+pub extern "C" fn add_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
 {
     let mut manager = PARAM_MANAGER.write();
+    let i0 = index.0;
+    let i1 = index.1;
+    println!("Requested float {value} for {kind}'s {i0}{i1}");
     manager.update_float(kind,slots.clone(),index,value);
 }
 
