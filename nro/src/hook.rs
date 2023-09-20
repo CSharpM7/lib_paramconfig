@@ -1,16 +1,18 @@
- use {
+use {
     smash::{
         hash40,
         app::{lua_bind::*, *},
         lib::lua_const::*
     }
 };
-use super::data::*;
+use super::*;
+//use super::data::*;
 use skyline::hooks::{
     getRegionAddress, 
     Region, 
     InlineCtx
 };
+
 
 //Related to Param Edits
 #[skyline::hook(offset=0x3f0028, inline)]
