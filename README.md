@@ -1,4 +1,4 @@
-# lib_paramconfig
+# lib_paramconfig (nro)
 
 **For end-users, go to the [releases tab](https://github.com/CSharpM7/lib_paramconfig/releases) and select the latest version. Make sure to disable the plugin when using other mods that hook param functions. For developers, keep reading.**
 
@@ -51,4 +51,25 @@ slots = [0,1,2] (~OPTIONAL~)
 param = "article_use_type" (For changing the use type of an article. Usually used for allowing entry/victory articles to spawn in game)
 value = 1
 kinds = ["mariod_capsuleblock"]
+```
+
+# lib_paramconfig
+
+lib_paramconfig also supports changes via your own skyline plugin.
+
+## Setup
+Your `Cargo.toml` needs to include this dependency:
+`param_config = { git = "https://github.com/csharpm7/lib_paramconfig.git"}`
+You will also need the nro installed, and at least one active `config_param.toml` file related to that character that includes both ints and params (the nro has a failsafe where it will not install any hooks it does not need to use). I recommend using this setup:
+```toml
+kind = "mariod"
+slots = [0]
+
+[[param_int]]
+param = "handle_externally"
+value = -1
+
+[[param_float]]
+param = "handle_externally"
+value = -1.0
 ```
