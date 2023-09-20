@@ -73,3 +73,11 @@ value = -1
 param = "handle_externally"
 value = -1.0
 ```
+
+## Usage
+`param_config::add_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32);`
+`param_config::add_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32);`
+Kind: Fighter/Weapon kind, as commonly used like `*FIGHTER_KIND_MARIOD`. If it's a weapon, use a negative number.
+Slots: Vector Array of slots
+Index: (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
+Value: Value for the param
