@@ -60,26 +60,16 @@ lib_paramconfig also supports changes via your own skyline plugin.
 ## Setup
 Your `Cargo.toml` needs to include this dependency:
 `param_config = { git = "https://github.com/csharpm7/lib_paramconfig.git"}`
-You will also need the nro installed, and at least one active `config_param.toml` file related to that character that includes both ints and params (the nro has a failsafe where it will not install any hooks it does not need to use). I recommend using this setup:
-```toml
-kind = "mariod"
-slots = [0]
-
-[[param_int]]
-param = "handle_externally"
-value = -1
-
-[[param_float]]
-param = "handle_externally"
-value = -1.0
-```
 
 ## Usage
 ```
-param_config::add_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32);
-param_config::add_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32);
+param_config::update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32);
+param_config::update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32);
 ```
 Kind: Fighter/Weapon kind, as commonly used like `*FIGHTER_KIND_MARIOD`. If it's a weapon, use a negative number.
+
 Slots: Vector Array of slots
+
 Index: (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
+
 Value: Value for the param

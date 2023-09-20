@@ -809,7 +809,7 @@ pub fn hash_str_to_u64(param: &str) -> u64
     if param.starts_with("0x"){
         match u64::from_str_radix(param.trim_start_matches("0x"), 16){
             Ok(hex) => return hex,
-            Err(err) => {println!("[libparam_config::data] Failed to parse {}",param); return 0}
+            Err(err) => {println!("[libparam_config::nro::data] Failed to parse {}",param); return 0}
         };
     }
     else 
@@ -828,19 +828,19 @@ pub unsafe fn read_config(config_file: String) -> bool
     let contents = match fs::read_to_string(config_file.as_str()) {
         Ok(c) => c,
         Err(_) => {
-            println!("[libparam_config::data] `{}`", config_file.as_str());
+            println!("[libparam_config::nro::data] `{}`", config_file.as_str());
             return false;
         }
     };
     let data: ConfigToml = match toml::from_str(&contents) {
         Ok(d) => d,
         Err(_) => {
-            println!("[libparam_config::data] Unable to load data from `{}`", config_file.as_str());
+            println!("[libparam_config::nro::data] Unable to load data from `{}`", config_file.as_str());
             return false;
         }
     };
-    println!("[libparam_config::data] Found file: {}",config_file.as_str());
-    println!("[libparam_config::data] Loading params:");
+    println!("[libparam_config::nro::data] Found file: {}",config_file.as_str());
+    println!("[libparam_config::nro::data] Loading params:");
     let mut mainKind = String::from("");
     let mut mainSlots = Vec::new();
     if data.kind.is_some(){
@@ -862,7 +862,7 @@ pub unsafe fn read_config(config_file: String) -> bool
                 kinds.push(mainKind.clone());
             }
             if kinds.len() < 1 {
-                println!("[libparam_config::data] Entry has no fighters");
+                println!("[libparam_config::nro::data] Entry has no fighters");
                 continue;
             }
 
@@ -873,7 +873,7 @@ pub unsafe fn read_config(config_file: String) -> bool
                 slots = mainSlots.clone();
             }
             if slots.len() < 1 {
-                println!("[libparam_config::data] Entry has no slots");
+                println!("[libparam_config::nro::data] Entry has no slots");
                 continue;
             }
 
@@ -894,32 +894,32 @@ pub unsafe fn read_config(config_file: String) -> bool
             );
 
             let mut validKinds = false;
-            print!("[");
-            for kind in kinds {
+            for kind in &kinds {
                 let isFighter = !(kind.contains("_") && kind != "ice_climber");
                 let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
                 if kind_i32 == 999 {
-                    println!("[libparam_config::data] {} is an invalid fighter",kind);
+                    println!("[libparam_config::nro::data] {} is an invalid fighter",kind);
                     continue;
                 }
                 if kind_i32 == -999 {
-                    println!("[libparam_config::data] {} is an invalid weapon",kind);
+                    println!("[libparam_config::nro::data] {} is an invalid weapon",kind);
                     continue;
                 }
                 validKinds = true;
-                param_config::add_int(kind_i32,slots.clone(),index,param.value);
+                param_config::update_int(kind_i32,slots.clone(),index,param.value);
                 //manager.update_int(kind_i32,slots.clone(),index,param.value);
+            }
+            print!("[");
+            for kind in &kinds {
                 print!("{},",kind.as_str());
             }
             if !validKinds {continue;}
             hasContent = true;
 
             if param.param == "article_use_type" {
-                *HOOK_ARTICLES.write() = true;
                 print!("] article use type: {}",param.value);
             }
             else{
-                *HOOK_PARAMS.write() = true;
                 print!("(");
                 for slot in slots {
                     print!("{slot},");
@@ -941,7 +941,7 @@ pub unsafe fn read_config(config_file: String) -> bool
                 kinds.push(mainKind.clone());
             }
             if kinds.len() < 1 {
-                println!("[libparam_config::data] Entry has no fighters");
+                println!("[libparam_config::nro::data] Entry has no fighters");
                 continue;
             }
 
@@ -952,7 +952,7 @@ pub unsafe fn read_config(config_file: String) -> bool
                 slots = mainSlots.clone();
             }
             if slots.len() < 1 {
-                println!("[libparam_config::data] Entry has no slots");
+                println!("[libparam_config::nro::data] Entry has no slots");
                 continue;
             }
 
@@ -966,26 +966,26 @@ pub unsafe fn read_config(config_file: String) -> bool
             let index = (hash_str_to_u64(param.param.as_str()),hash_str_to_u64(subparam_str));
 
             let mut validKinds = false;
-            print!("[");
-            for kind in kinds {
+            for kind in &kinds {
                 let isFighter = !(kind.contains("_") && kind != "ice_climber");
                 let kind_i32 = if isFighter {get_fighter_kind_from_string(&kind)} else {get_weapon_kind_from_string(&kind)};
                 if kind_i32 == 999 {
-                    println!("[libparam_config::data] {} is an invalid fighter",kind);
+                    println!("[libparam_config::nro::data] {} is an invalid fighter",kind);
                     continue;
                 }
                 if kind_i32 == -999 {
-                    println!("[libparam_config::data] {} is an invalid weapon",kind);
+                    println!("[libparam_config::nro::data] {} is an invalid weapon",kind);
                     continue;
                 }
                 validKinds = true;
-                //manager.update_float(kind_i32,slots.clone(),index,param.value);
-                param_config::add_float(kind_i32,slots.clone(),index,param.value);
+                param_config::update_float(kind_i32,slots.clone(),index,param.value);
+            }
+            print!("[");
+            for kind in &kinds {
                 print!("{},",kind.as_str());
             }
             if !validKinds {continue;}
             hasContent = true;
-            *HOOK_PARAMS.write() = true;
 
             print!("(");
             for slot in slots {
@@ -996,7 +996,7 @@ pub unsafe fn read_config(config_file: String) -> bool
         }  
     }
     #[cfg(not(feature = "switch"))] 
-    println!("[libparam_config::data] Finished!");
+    println!("[libparam_config::nro::data] Finished!");
     
     return hasContent;
 }

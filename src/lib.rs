@@ -1,4 +1,4 @@
-
+#![crate_name = "param_config"]
 #![feature(
     concat_idents,
     proc_macro_hygiene
@@ -26,26 +26,16 @@ use std::{
     sync::Arc,
     arch::asm,
 };
-/*
-use std::{
-    io,
-    env,
-    path::Path,
-    convert::TryInto,
-    str::FromStr,
-    fs,
-    thread::{self}
-};*/
 use parking_lot::RwLock;
 use lazy_static::lazy_static;
-
+mod hook;
 
 pub fn hash_str_to_u64(param: &str) -> u64
 {
     if param.starts_with("0x"){
         match u64::from_str_radix(param.trim_start_matches("0x"), 16){
             Ok(hex) => return hex,
-            Err(err) => {println!("[libparam_config::data] Failed to parse {}",param); return 0}
+            Err(err) => {println!("[libparam_config::nro::data] Failed to parse {}",param); return 0}
         };
     }
     else 
@@ -56,6 +46,26 @@ pub fn hash_str_to_u64(param: &str) -> u64
             _ => hash40(param),
         };
     }
+}
+
+lazy_static! {
+    static ref HOOK_ARTICLES: RwLock<bool> = RwLock::new(false);
+    static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
+    static ref IS_HOOKED_ARTICLES: RwLock<bool> = RwLock::new(false);
+    static ref IS_HOOKED_PARAMS: RwLock<bool> = RwLock::new(false);
+}
+
+pub fn can_Hook_Articles() -> bool {
+    return *HOOK_ARTICLES.read() && !is_Hooked_Articles();
+}
+pub fn can_Hook_Params() -> bool {
+    return *HOOK_PARAMS.read() && !is_Hooked_Params();
+}
+pub fn is_Hooked_Articles() -> bool {
+    return *IS_HOOKED_ARTICLES.read();
+}
+pub fn is_Hooked_Params() -> bool {
+    return *IS_HOOKED_PARAMS.read();
 }
 
 pub struct CharacterParam {
@@ -160,7 +170,6 @@ impl ParamManager {
         for param in &mut self.params {
             if (param.kind == kind) {
                 if param.slots == slots {
-                    println!("Inserting {value} for {kind}'s {i0};{i1}");
                     param.floats.insert(index, value);
                     return;
                 }
@@ -173,7 +182,6 @@ impl ParamManager {
             floats: HashMap::new()
         };
         newparams.floats.insert(index,value);
-        println!("Created {value} for {kind}'s {i0};{i1}");
         self.push(newparams);
     }
     
@@ -183,36 +191,19 @@ lazy_static! {
     pub static ref PARAM_MANAGER: RwLock<ParamManager> = RwLock::new(ParamManager::new());
 }
 
-#[no_mangle]
-pub extern "C" fn add_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32)
-{
-    let mut manager = PARAM_MANAGER.write();
-    manager.update_int(kind,slots.clone(),index,value);
-}
-#[no_mangle]
-pub extern "C" fn add_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
-{
-    let mut manager = PARAM_MANAGER.write();
-    let i0 = index.0;
-    let i1 = index.1;
-    println!("Requested float {value} for {kind}'s {i0}{i1}");
-    manager.update_float(kind,slots.clone(),index,value);
-}
-
-
 pub struct FighterParamModule {
     pub manager: ParamManager
 }
 
 impl FighterParamModule {
     #[export_name = "FighterParamModule__has_kind"]
-    pub extern "Rust" fn has_kind(kind: i32) -> bool {
+    pub extern "C" fn has_kind(kind: i32) -> bool {
         let mut manager = PARAM_MANAGER.read();
         return manager.kinds.contains(&kind) || manager.has_all;
     }
 
     #[export_name = "FighterParamModule__get_int_param"]
-    pub extern "Rust" fn get_int_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<i32> {
+    pub extern "C" fn get_int_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
@@ -226,7 +217,7 @@ impl FighterParamModule {
         return None;
     }
     #[export_name = "FighterParamModule__get_float_param"]
-    pub extern "Rust" fn get_float_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
+    pub extern "C" fn get_float_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
@@ -240,7 +231,7 @@ impl FighterParamModule {
         return None;
     }
     #[export_name = "FighterParamModule__get_article_use_type"]
-    pub extern "Rust" fn get_article_use_type(kind: i32) -> Option<i32> {
+    pub extern "C" fn get_article_use_type(kind: i32) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
@@ -252,4 +243,63 @@ impl FighterParamModule {
         }
         return None;
     }
+}
+
+
+
+#[no_mangle]
+/// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
+///
+/// # Arguments
+///
+/// * `kind` - Fighter/Weapon kind, as commonly used like *FIGHTER_KIND_MARIOD. If it's a weapon, use a negative number.
+/// * `slots` - Array of effected slots
+/// * `index` - (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
+/// * `value` - Value for the param
+///
+/// # Example
+///
+/// ```
+/// // remove doc's walljump on slot 1
+/// let slots = vec![1];
+/// let param = (hash40("wall_jump_type"),0 as u64);
+/// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param, 0);
+/// ```
+pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32)
+{
+    let mut manager = PARAM_MANAGER.write();
+    manager.update_int(kind,slots.clone(),index,value);
+    if index.0 == hash40("article_use_type"){
+        *HOOK_ARTICLES.write() = true;
+        hook::install_articles();
+    }
+    else{
+        *HOOK_PARAMS.write() = true;
+        hook::install_params();
+    }
+}
+#[no_mangle]
+/// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
+///
+/// # Arguments
+///
+/// * `kind` - Fighter/Weapon kind, as commonly used like *FIGHTER_KIND_MARIOD. If it's a weapon, use a negative number.
+/// * `slots` - Array of effected slots
+/// * `index` - (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
+/// * `value` - Value for the param
+///
+/// # Example
+///
+/// ```
+/// // let doc run super fast on slot 1
+/// let slots = vec![1];
+/// let param = (hash40("run_speed_max"),0 as u64);
+/// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param, 3.0);
+/// ```
+pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
+{
+    let mut manager = PARAM_MANAGER.write();
+    manager.update_float(kind,slots.clone(),index,value);
+    *HOOK_PARAMS.write() = true;
+    hook::install_params();
 }
