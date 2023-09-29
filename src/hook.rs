@@ -89,6 +89,7 @@ unsafe fn get_article_use_type_mask(weapon_kind: i32, entry_id: i32) -> u8 {
 }
 
 pub fn install_params() {
+    super::set_hash_any();
     if super::can_Hook_Params() {
         println!("[libparam_config] Hooking GetParam functions");
         skyline::install_hooks!(

@@ -53,6 +53,7 @@ lazy_static! {
     static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_ARTICLES: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_PARAMS: RwLock<bool> = RwLock::new(false);
+    static ref HASH_ANY: RwLock<u64> = RwLock::new(0);
 }
 
 pub fn can_Hook_Articles() -> bool {
@@ -66,6 +67,11 @@ pub fn is_Hooked_Articles() -> bool {
 }
 pub fn is_Hooked_Params() -> bool {
     return *IS_HOOKED_PARAMS.read();
+}
+pub fn set_hash_any() {
+    if *HASH_ANY.read() == 0 {
+        *HASH_ANY.write() = hash_str_to_u64("any");
+    }
 }
 
 pub struct CharacterParam {
@@ -87,10 +93,16 @@ impl CharacterParam {
         if let Some(value) = self.ints.get(&(param_type,param_hash)){
             return Some(*value);
         }
+        else if let Some(value) = self.ints.get(&(*HASH_ANY.read(),param_hash)){
+            return Some(*value);
+        }
         return None;
     }
     pub fn get_float(&self, param_type: u64, param_hash: u64) -> Option<f32> {
         if let Some(value) = self.floats.get(&(param_type,param_hash)){
+            return Some(*value);
+        }
+        else if let Some(value) = self.floats.get(&(*HASH_ANY.read(),param_hash)){
             return Some(*value);
         }
         return None;
