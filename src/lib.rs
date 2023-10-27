@@ -264,6 +264,34 @@ impl FighterParamModule {
 ///
 /// * `kind` - Fighter/Weapon kind, as commonly used like *FIGHTER_KIND_MARIOD. If it's a weapon, use a negative number.
 /// * `slots` - Array of effected slots
+/// * `index` - (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
+/// * `value` - Value for the param
+///
+/// # Example
+///
+/// ```
+/// // remove doc's walljump on slot 1
+/// let slots = vec![1];
+/// let param = (hash40("wall_jump_type"),0 as u64);
+/// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param, 0);
+/// ```
+pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32)
+{
+    let mut manager = PARAM_MANAGER.write();
+    manager.update_int(kind,slots.clone(),index,value);
+    if index.0 == hash40("article_use_type"){
+        *HOOK_ARTICLES.write() = true;
+        hook::install_articles();
+    }
+}
+
+#[no_mangle]
+/// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
+///
+/// # Arguments
+///
+/// * `kind` - Fighter/Weapon kind, as commonly used like *FIGHTER_KIND_MARIOD. If it's a weapon, use a negative number.
+/// * `slots` - Array of effected slots
 /// * `param` - (hash40(""),hash40(""),i32) for param/subparam hashes and values. For common params, the second argument should be 0.
 ///
 /// # Example
@@ -274,7 +302,7 @@ impl FighterParamModule {
 /// let param = (hash40("wall_jump_type"),0 as u64,0);
 /// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param);
 /// ```
-pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
+pub extern "C" fn update_int_2(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
 {
     let mut manager = PARAM_MANAGER.write();
     manager.update_int(kind,slots.clone(),(param.0,param.1),param.2);
@@ -287,6 +315,33 @@ pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
         hook::install_params();
     }
 }
+
+#[no_mangle]
+/// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
+///
+/// # Arguments
+///
+/// * `kind` - Fighter/Weapon kind, as commonly used like *FIGHTER_KIND_MARIOD. If it's a weapon, use a negative number.
+/// * `slots` - Array of effected slots
+/// * `index` - (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
+/// * `value` - Value for the param
+///
+/// # Example
+///
+/// ```
+/// // let doc run super fast on slot 1
+/// let slots = vec![1];
+/// let param = (hash40("run_speed_max"),0 as u64);
+/// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param, 3.0);
+/// ```
+pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
+{
+    let mut manager = PARAM_MANAGER.write();
+    manager.update_float(kind,slots.clone(),index,value);
+    *HOOK_PARAMS.write() = true;
+    hook::install_params();
+}
+
 #[no_mangle]
 /// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
 ///
@@ -305,7 +360,7 @@ pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
 /// let param = (hash40("run_speed_max"),0 as u64, 3.0);
 /// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param);
 /// ```
-pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
+pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
 {
     let mut manager = PARAM_MANAGER.write();
     manager.update_float(kind,slots.clone(),(param.0,param.1),param.2);

@@ -991,7 +991,7 @@ pub unsafe fn read_config(config_file: String) -> bool
             for slot in slots {
                 print!("{slot},");
             }
-            print!("] {}({}): {}",param.param,subparam_str,param.value);
+            print!(")] {}({}): {}",param.param,subparam_str,param.value);
             println!("");
         }  
     }
