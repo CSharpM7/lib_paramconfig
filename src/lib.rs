@@ -5,7 +5,8 @@
 )]
 #![allow(
     non_snake_case,
-    unused
+    unused,
+    warnings
 )]
 #![deny(
     deprecated
