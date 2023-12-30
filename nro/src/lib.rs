@@ -11,8 +11,7 @@
     deprecated
 )]
 
-#[macro_use]
-extern crate lazy_static;
+use once_cell::sync::Lazy;
 
 use param_config::{
     *
@@ -28,7 +27,6 @@ use std::{
     sync::Arc,
     arch::asm,
 };
-use parking_lot::RwLock;
 
 pub mod data;
 

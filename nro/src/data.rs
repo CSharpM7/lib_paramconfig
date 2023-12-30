@@ -10,144 +10,146 @@ use std::{
     thread::{self}
 };
 
-
-use lazy_static::lazy_static;
-
-//use std::sync::RwLock;
+use once_cell::sync::Lazy;
 
 use serde_derive::Deserialize;
 use toml;
 
 const IDENTIFIER: &str = "config_param.toml";
 
-pub fn get_fighter_kind_from_string(target_kind: &str) -> i32 {
+pub static FIGHTER_TABLE: Lazy<HashMap<&str,&str>> = Lazy::new(|| {
     let kind_map = HashMap::from([
-    //("all","-1"),
-    ("sonic","29"),
-    ("demon","5c"),
-    ("dolly","55"),
-    ("link","2"),
-    ("miienemys","4f"),
-    ("tantan","57"),
-    ("diddy","27"),
-    ("jack","52"),
-    ("sheik","10"),
-    ("purin","c"),
-    ("simon","43"),
-    ("pichu","13"),
-    ("koopag","4d"),
-    ("reflet","38"),
-    ("donkey","1"),
-    ("rosetta","33"),
-    ("elight","5b"),
-    ("plizardon","26"),
-    ("base_append_head","51"),
-    ("brave","53"),
-    ("zelda","11"),
-    ("none","ffffffff"),
-    ("duckhunt","3b"),
-    ("rockman","31"),
-    ("samus","3"),
-    ("pfushigisou","25"),
-    ("cloud","3e"),
-    ("packun","51"),
-    ("light","74"),
-    ("younglink","17"),
-    ("wiifit","32"),
-    ("buddy","54"),
-    ("robot","2d"),
-    ("littlemac","34"),
-    ("trail","5d"),
-    ("samusd","4"),
-    ("richter","44"),
-    ("pzenigame","24"),
-    ("snake","22"),
-    ("table_ex_term","76"),
-    ("edge","59"),
-    ("yoshi","5"),
-    ("ganon","18"),
-    ("ridley","42"),
-    ("ken","3d"),
-    ("mewtwo","19"),
-    ("wolf","2f"),
-    ("roy","1a"),
-    ("base_append_num","d"),
-    ("falco","14"),
-    ("base_head","0"),
-    ("toonlink","2e"),
-    ("zenigame","6f"),
-    ("murabito","30"),
-    ("miienemyf","4e"),
-    ("captain","b"),
-    ("kamui","3f"),
-    ("nana","4c"),
-    ("szerosuit","20"),
-    ("ptrainer","72"),
-    ("popo","4b"),
-    ("fushigisou","70"),
-    ("pikachu","8"),
-    ("gekkouga","35"),
-    ("other_tail","50"),
-    ("lucas","28"),
-    ("fox","7"),
-    ("palutena","36"),
-    ("dedede","2a"),
-    ("ice_climber","6e"),
-    ("wario","21"),
-    ("koopa","f"),
-    ("daisy","e"),
-    ("flame","73"),
-    ("lucina","16"),
-    ("mario","0"),
-    ("chrom","1b"),
-    ("kirby","6"),
-    ("pit","1e"),
-    ("eflame","5a"),
-    ("lucario","2c"),
-    ("marth","15"),
-    ("master","56"),
-    ("metaknight","1d"),
-    ("peach","d"),
-    ("table_ex_start","6d"),
-    ("pitb","1f"),
-    ("gamewatch","1c"),
-    ("other_num","4"),
-    ("luigi","9"),
-    ("miifighter","48"),
-    ("pacman","37"),
-    ("random","77"),
-    ("base_append_tail","5d"),
-    ("miigunner","4a"),
-    ("miienemyg","50"),
-    ("element","75"),
-    ("shizue","46"),
-    ("bayonetta","40"),
-    ("shulk","39"),
-    ("gaogaen","47"),
-    ("krool","45"),
-    ("other_head","4d"),
-    ("lizardon","71"),
-    ("base_tail","4c"),
-    ("ike","23"),
-    ("ryu","3c"),
-    ("mariod","12"),
-    ("pikmin","2b"),
-    ("base_num","4d"),
-    ("koopajr","3a"),
-    ("inkling","41"),
-    ("ness","a"),
-    ("term","5e"),
-    ("pickel","58"),
-    ("miiswordsman","49")
-    ]);
+        //("all","-1"),
+        ("sonic","29"),
+        ("demon","5c"),
+        ("dolly","55"),
+        ("link","2"),
+        ("miienemys","4f"),
+        ("tantan","57"),
+        ("diddy","27"),
+        ("jack","52"),
+        ("sheik","10"),
+        ("purin","c"),
+        ("simon","43"),
+        ("pichu","13"),
+        ("koopag","4d"),
+        ("reflet","38"),
+        ("donkey","1"),
+        ("rosetta","33"),
+        ("elight","5b"),
+        ("plizardon","26"),
+        ("base_append_head","51"),
+        ("brave","53"),
+        ("zelda","11"),
+        ("none","ffffffff"),
+        ("duckhunt","3b"),
+        ("rockman","31"),
+        ("samus","3"),
+        ("pfushigisou","25"),
+        ("cloud","3e"),
+        ("packun","51"),
+        ("light","74"),
+        ("younglink","17"),
+        ("wiifit","32"),
+        ("buddy","54"),
+        ("robot","2d"),
+        ("littlemac","34"),
+        ("trail","5d"),
+        ("samusd","4"),
+        ("richter","44"),
+        ("pzenigame","24"),
+        ("snake","22"),
+        ("table_ex_term","76"),
+        ("edge","59"),
+        ("yoshi","5"),
+        ("ganon","18"),
+        ("ridley","42"),
+        ("ken","3d"),
+        ("mewtwo","19"),
+        ("wolf","2f"),
+        ("roy","1a"),
+        ("base_append_num","d"),
+        ("falco","14"),
+        ("base_head","0"),
+        ("toonlink","2e"),
+        ("zenigame","6f"),
+        ("murabito","30"),
+        ("miienemyf","4e"),
+        ("captain","b"),
+        ("kamui","3f"),
+        ("nana","4c"),
+        ("szerosuit","20"),
+        ("ptrainer","72"),
+        ("popo","4b"),
+        ("fushigisou","70"),
+        ("pikachu","8"),
+        ("gekkouga","35"),
+        ("other_tail","50"),
+        ("lucas","28"),
+        ("fox","7"),
+        ("palutena","36"),
+        ("dedede","2a"),
+        ("ice_climber","6e"),
+        ("wario","21"),
+        ("koopa","f"),
+        ("daisy","e"),
+        ("flame","73"),
+        ("lucina","16"),
+        ("mario","0"),
+        ("chrom","1b"),
+        ("kirby","6"),
+        ("pit","1e"),
+        ("eflame","5a"),
+        ("lucario","2c"),
+        ("marth","15"),
+        ("master","56"),
+        ("metaknight","1d"),
+        ("peach","d"),
+        ("table_ex_start","6d"),
+        ("pitb","1f"),
+        ("gamewatch","1c"),
+        ("other_num","4"),
+        ("luigi","9"),
+        ("miifighter","48"),
+        ("pacman","37"),
+        ("random","77"),
+        ("base_append_tail","5d"),
+        ("miigunner","4a"),
+        ("miienemyg","50"),
+        ("element","75"),
+        ("shizue","46"),
+        ("bayonetta","40"),
+        ("shulk","39"),
+        ("gaogaen","47"),
+        ("krool","45"),
+        ("other_head","4d"),
+        ("lizardon","71"),
+        ("base_tail","4c"),
+        ("ike","23"),
+        ("ryu","3c"),
+        ("mariod","12"),
+        ("pikmin","2b"),
+        ("base_num","4d"),
+        ("koopajr","3a"),
+        ("inkling","41"),
+        ("ness","a"),
+        ("term","5e"),
+        ("pickel","58"),
+        ("miiswordsman","49")
+        ]);
+    kind_map
+});
+pub fn get_fighter_kind_from_string(target_kind: &str) -> i32 {
+    
     let lowercased=target_kind.to_lowercase();
-    if let Some(hex) = kind_map.get(lowercased.as_str()){
+    if let Some(hex) = (*FIGHTER_TABLE).get(lowercased.as_str()){
         let int = i64::from_str_radix(hex, 16);
         return int.unwrap() as i32;
     }
     return 999;
 }
-pub fn get_weapon_kind_from_string(target_kind: &str) -> i32 {
+
+pub static WEAPON_TABLE: Lazy<HashMap<&str,&str>> = Lazy::new(|| {
     let kind_map = HashMap::from([
         ("bayonetta_bat","171"),
         ("bayonetta_gomorrah","172"),
@@ -757,26 +759,28 @@ pub fn get_weapon_kind_from_string(target_kind: &str) -> i32 {
         ("zelda_phantom","71"),
         ("zelda_triforce","72")
     ]);
+    kind_map
+});
+pub fn get_weapon_kind_from_string(target_kind: &str) -> i32 {
+    
     let lowercased=target_kind.to_lowercase();
-    if let Some(hex) = kind_map.get(lowercased.as_str()){
+    if let Some(hex) = (*WEAPON_TABLE).get(lowercased.as_str()){
         let int = i64::from_str_radix(hex, 16);
         return (int.unwrap()*-1) as i32;
     }
     return -999;
 }
-
-lazy_static! {
-    static ref HOOK_ARTICLES: RwLock<bool> = RwLock::new(false);
-    static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
-}
+/*
+pub static HOOK_ARTICLES: Lazy<bool> = Lazy::new(|| {false});
+pub static HOOK_PARAMS: Lazy<bool> = Lazy::new(|| {false});
 
 pub fn can_Hook_Articles() -> bool {
-    return *HOOK_ARTICLES.read();
+    return *HOOK_ARTICLES;
 }
 pub fn can_Hook_Params() -> bool {
-    return *HOOK_PARAMS.read();
+    return *HOOK_PARAMS;
 }
-
+ */
 
 // Top level struct to hold the TOML data.
 #[derive(Deserialize)]
