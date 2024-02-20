@@ -15,14 +15,16 @@ use skyline::hooks::{
 
 
 //Related to Param Edits
-#[skyline::hook(offset=0x3f0028, inline)]
+/*
+#[skyline::hook(offset=0x3f0048, inline)]
 pub unsafe fn offset_dump(ctx: &InlineCtx) {
 	let text = skyline::hooks::getRegionAddress(skyline::hooks::Region::Text) as u64;
 	println!("Function Offset: {:#X}", ctx.registers[8].x.as_ref() - text);
 }
+*/
 
-static INT_OFFSET: usize = 0x4e5380; // 12.0.0
-static FLOAT_OFFSET: usize = 0x4e53C0; // 12.0.0
+static INT_OFFSET: usize = 0x4e53a0; // 13.0.2
+static FLOAT_OFFSET: usize = 0x4e53e0; // 13.0.2
 
 #[skyline::hook(offset=INT_OFFSET)]
 pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) -> i32 {

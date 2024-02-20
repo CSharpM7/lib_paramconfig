@@ -36,4 +36,7 @@ pub fn main() {
     if !data::install() {
         println!("[libparam_config::nro] No param data found");
     }
+    else{
+        println!("[libparam_config::nro] Loaded");
+    }
 }
