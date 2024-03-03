@@ -63,8 +63,8 @@ Your `Cargo.toml` needs to include this dependency:
 
 ## Usage
 ```
-param_config::update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32);
-param_config::update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32);
+param_config::update_int_2(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32);
+param_config::update_float_2(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32);
 ```
 Kind: Fighter/Weapon kind, as commonly used like `*FIGHTER_KIND_MARIOD`. If it's a weapon, use a negative number.
 
