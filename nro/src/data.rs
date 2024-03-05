@@ -133,9 +133,10 @@ pub fn build_fighter_table() {
     FIGHTER_TABLE.lock().unwrap().insert("koopajr","3a");
     FIGHTER_TABLE.lock().unwrap().insert("inkling","41");
     FIGHTER_TABLE.lock().unwrap().insert("ness","a");
-    FIGHTER_TABLE.lock().unwrap().insert("term","5e");
     FIGHTER_TABLE.lock().unwrap().insert("pickel","58");
     FIGHTER_TABLE.lock().unwrap().insert("miiswordsman","49");
+    FIGHTER_TABLE.lock().unwrap().insert("term","5e");
+    FIGHTER_TABLE.lock().unwrap().insert("all","5e");
 }
 pub fn get_fighter_kind_from_string(target_kind: &str) -> i32 {
     

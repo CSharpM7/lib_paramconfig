@@ -101,6 +101,7 @@ pub fn install_params() {
     }
 }
 pub fn install_articles() {
+    println!("Article check");
     if super::can_Hook_Articles() {
         println!("[libparam_config] Hooking Article Use Type function");
         skyline::install_hooks!(

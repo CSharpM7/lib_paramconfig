@@ -77,7 +77,7 @@ pub fn set_hash_any() {
 
 pub struct CharacterParam {
     pub kind: i32,
-    //pub is_fighter: bool,
+    pub has_all_slots: bool,
     pub slots: Vec<i32>,
     pub ints: HashMap<(u64,u64),i32>,
     pub floats: HashMap<(u64,u64),f32>
@@ -131,9 +131,9 @@ impl ParamManager {
         let kind = params.kind;
         if !(self.kinds.contains(&kind)) {
             self.kinds.push(kind);
-            //if kind == -1 {
-            //    self.has_all = true;
-            //}
+            if kind == *FIGHTER_KIND_ALL {
+                self.has_all = true;
+            }
         }
         self.params.push(params);
     }
@@ -141,7 +141,7 @@ impl ParamManager {
     pub fn get_param_by_slot(&self,kind: i32, slot: i32) -> Option<&CharacterParam> {
         for params in &self.params{
             if (params.kind == kind) {
-                if params.slots.contains(&slot) {
+                if params.slots.contains(&slot) || params.has_all_slots {
                     return Some(params);
                 }
             }
@@ -170,6 +170,7 @@ impl ParamManager {
         }
         let mut newparams = CharacterParam {
             kind: kind,
+            has_all_slots: (slots.contains(&-1)),
             slots: slots,
             ints: HashMap::new(),
             floats: HashMap::new()
@@ -190,6 +191,7 @@ impl ParamManager {
         }
         let mut newparams = CharacterParam {
             kind: kind,
+            has_all_slots: (slots.contains(&-1)),
             slots: slots,
             ints: HashMap::new(),
             floats: HashMap::new()
@@ -219,8 +221,8 @@ impl FighterParamModule {
     pub extern "C" fn get_int_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
-            if (params.kind == kind) {
-                if params.slots.contains(&slot) {
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {
                     if let Some(value) = params.get_int(param_type, param_hash){
                         return Some(value);
                     }
@@ -233,8 +235,8 @@ impl FighterParamModule {
     pub extern "C" fn get_float_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
-            if (params.kind == kind) {
-                if params.slots.contains(&slot) {                    
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {  
                     if let Some(value) = params.get_float(param_type, param_hash){
                         return Some(value);
                     }      
