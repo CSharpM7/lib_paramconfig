@@ -340,7 +340,7 @@ pub extern "C" fn update_int_2(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
 pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
 {
     let mut manager = PARAM_MANAGER.write();
-    manager.update_float(kind,slots.clone(),index,value);
+    manager.update_float(kind,slots,index,value);
     *HOOK_PARAMS.write() = true;
     hook::install_params();
 }
@@ -366,7 +366,7 @@ pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value
 pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
 {
     let mut manager = PARAM_MANAGER.write();
-    manager.update_float(kind,slots.clone(),(param.0,param.1),param.2);
+    manager.update_float(kind,slots,(param.0,param.1),param.2);
     *HOOK_PARAMS.write() = true;
     hook::install_params();
 }
