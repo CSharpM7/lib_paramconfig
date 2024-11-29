@@ -22,21 +22,21 @@ All end-users will need to download an updated `libparam_config.nro` from the re
 ## Toml Layout
 
 ```
-kind = "mario" (~OPTIONAL~ The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
-slots = [0,1,...] (~OPTIONAL~ The default list of effected slots (alt costume numbers). Any param that doesn't have a `slots` value will default to this list)
+kind = "mario" #(~OPTIONAL~ The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
+slots = [0,1,...] #(~OPTIONAL~ The default list of effected slots (alt costume numbers). Any param that doesn't have a `slots` value will default to this list)
 
 [[param_int]]
-param = "param_fireball" (the cracked hash name found when viewing in prceditor)
-subparam = "life" (the cracked hash of the subcategory of this param. It might includes things like "life" or "angle")
+param = "param_fireball" #(the cracked hash name found when viewing in prceditor)
+subparam = "life" #(the cracked hash of the subcategory of this param. It might includes things like "life" or "angle")
 value = 99 
 
-[[param_int]] (a second param you wish to edit)
+[[param_int]] #(a second param you wish to edit)
 param = "wall_jump_type" 
-subparam = "" (note for fighter attributes, you often want to leave this blank)
-value = 0 (if you are working with a bool, use 0 for false, and 1 for true)
+subparam = "" #(note for fighter attributes, you often want to leave this blank)
+value = 0 #(if you are working with a bool, use 0 for false, and 1 for true)
 
-[[param_float]] (you can also get rid of this category if you are not editing floats. Same goes for ints)
-param = "0x06a0d82dad" (you can also use the raw hash version, as long as it begins with 0x)
+[[param_float]] #(you can also get rid of this category if you are not editing floats. Same goes for ints)
+param = "0x06a0d82dad" #(you can also use the raw hash version, as long as it begins with 0x)
 subparam = ""
 value = 60.0
 
@@ -44,11 +44,11 @@ value = 60.0
 param = "param_fireball"
 subparam = "gravity_accel"
 value = 0.0
-kinds = ["mario","mario_fireball"] (~OPTIONAL~ For weapons, I recommend including their weapon kind in the list as well)
-slots = [0,1,2] (~OPTIONAL~)
+kinds = ["mario","mario_fireball"] #(~OPTIONAL~ For weapons, I recommend including their weapon kind in the list as well)
+slots = [0,1,2] #(~OPTIONAL~)
 
 [[param_int]]
-param = "article_use_type" (For changing the use type of an article. Usually used for allowing entry/victory articles to spawn in game)
+param = "article_use_type" #(For changing the use type of an article. Usually used for allowing entry/victory articles to spawn in game)
 value = 1
 kinds = ["mariod_capsuleblock"]
 ```
