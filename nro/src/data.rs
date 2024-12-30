@@ -764,7 +764,9 @@ pub fn get_weapon_kind_from_string(target_kind: &str) -> i32 {
     let lowercased=target_kind.to_lowercase();
     if let Some(hex) = WEAPON_TABLE.lock().unwrap().get(lowercased.as_str()){
         let int = i64::from_str_radix(hex, 16);
-        return (int.unwrap()*-1) as i32;
+        let result = (int.unwrap()*-1) as i32;
+        //println!("{} > {}",target_kind,result);
+        return result;
     }
     return -999;
 }
@@ -876,13 +878,23 @@ pub unsafe fn read_config(config_file: String) -> bool
             if param.param == "article_use_type" {
                 subparam_string = String::from("");
             }
-            else {
+            else if param.param == "kirby_cant_copy" {
+                subparam_string = String::from("");
             }
-            let subparam_str = subparam_string.as_str();
 
-            let index = (hash_str_to_u64(param.param.as_str()),
-            hash_str_to_u64(subparam_str)
-            );
+            let subparam_str = subparam_string.as_str();
+            let mut subparam_hash = 0;
+            if param.param == "villager_cant_pocket" {
+                subparam_hash = (get_weapon_kind_from_string(&subparam_string).abs()) as u64;
+                if subparam_hash == 999 {
+                    println!("[libparam_config::nro::data] {} is an invalid weapon",&subparam_string);
+                    continue;
+                }
+            } 
+            else {
+                subparam_hash = hash_str_to_u64(subparam_str);
+            };
+            let index = (hash_str_to_u64(param.param.as_str()),subparam_hash);
 
             let mut validKinds = false;
             for kind in &kinds {
@@ -910,6 +922,12 @@ pub unsafe fn read_config(config_file: String) -> bool
             if param.param == "article_use_type" {
                 print!("] article use type: {}",param.value);
             }
+            else if param.param == "kirby_cant_copy" {
+                print!("] kirby cant copy");
+            }
+            else if param.param == "villager_cant_pocket" {
+                print!("{}",format!("] villager cant pocket: {} ({})",subparam_string,index.1));
+            }
             else{
                 print!("(");
                 for slot in slots {
@@ -918,7 +936,6 @@ pub unsafe fn read_config(config_file: String) -> bool
                 print!(")] {}({}): {}",param.param,subparam_str,param.value);
             }
             println!("");
-
         } 
     }
     if data.param_float.is_some(){

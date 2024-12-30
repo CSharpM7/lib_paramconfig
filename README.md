@@ -23,7 +23,7 @@ All end-users will need to download an updated `libparam_config.nro` from the re
 
 ```
 kind = "mario" #(~OPTIONAL~ The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
-slots = [0,1,...] #(~OPTIONAL~ The default list of effected slots (alt costume numbers). Any param that doesn't have a `slots` value will default to this list)
+slots = [0,1,...] #(~OPTIONAL~ The default list of effected slots (alt costume numbers). Use -1 to apply to all costumes. Any param that doesn't have a `slots` value will default to this list)
 
 [[param_int]]
 param = "param_fireball" #(the cracked hash name found when viewing in prceditor)
@@ -51,6 +51,19 @@ slots = [0,1,2] #(~OPTIONAL~)
 param = "article_use_type" #(For changing the use type of an article. Usually used for allowing entry/victory articles to spawn in game)
 value = 1
 kinds = ["mariod_capsuleblock"]
+
+[[param_int]]
+param = "kirby_cant_copy" #(Prevents Kirby from copying the ability of a fighter `kind` if they are using a costume in `slots`)
+value = 0
+kinds = ["mario"] #(~OPTIONAL~)
+slots = [0,1,2] #(~OPTIONAL~)
+
+[[param_int]]
+param = "villager_cant_pocket" #(Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`)
+subparam = "koopajr_cannonball" #(Kind of weapon to prevent being pocketed)
+value = 0
+kinds = ["mario"] #(~OPTIONAL~)
+slots = [-1] #(~OPTIONAL~)
 ```
 
 # lib_paramconfig

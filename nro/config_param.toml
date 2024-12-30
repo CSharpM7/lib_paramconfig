@@ -44,3 +44,12 @@ value = 4.0
 param = "article_use_type"
 value = 1
 kinds = ["mariod_capsuleblock"]
+
+[[param_int]]
+param = "kirby_cant_copy"
+value = 0
+
+[[param_int]]
+param = "villager_cant_pocket"
+subparam = "mariod_drcapsule"
+value = 0

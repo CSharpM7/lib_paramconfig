@@ -52,8 +52,12 @@ pub fn hash_str_to_u64(param: &str) -> u64
 lazy_static! {
     static ref HOOK_ARTICLES: RwLock<bool> = RwLock::new(false);
     static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
+    static ref HOOK_KIRBY: RwLock<bool> = RwLock::new(false);
+    static ref HOOK_VILLAGER: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_ARTICLES: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_PARAMS: RwLock<bool> = RwLock::new(false);
+    static ref IS_HOOKED_KIRBY: RwLock<bool> = RwLock::new(false);
+    static ref IS_HOOKED_VILLAGER: RwLock<bool> = RwLock::new(false);
     static ref HASH_ANY: RwLock<u64> = RwLock::new(0);
 }
 
@@ -63,11 +67,23 @@ pub fn can_Hook_Articles() -> bool {
 pub fn can_Hook_Params() -> bool {
     return *HOOK_PARAMS.read() && !is_Hooked_Params();
 }
+pub fn can_Hook_Kirby() -> bool {
+    return *HOOK_KIRBY.read() && !is_Hooked_Kirby();
+}
+pub fn can_Hook_Villager() -> bool {
+    return *HOOK_VILLAGER.read() && !is_Hooked_Villager();
+}
 pub fn is_Hooked_Articles() -> bool {
     return *IS_HOOKED_ARTICLES.read();
 }
 pub fn is_Hooked_Params() -> bool {
     return *IS_HOOKED_PARAMS.read();
+}
+pub fn is_Hooked_Kirby() -> bool {
+    return *IS_HOOKED_KIRBY.read();
+}
+pub fn is_Hooked_Villager() -> bool {
+    return *IS_HOOKED_VILLAGER.read();
 }
 pub fn set_hash_any() {
     if *HASH_ANY.read() == 0 {
@@ -258,6 +274,41 @@ impl FighterParamModule {
         }
         return None;
     }
+
+    #[export_name = "FighterParamModule__can_kirby_copy"]
+    pub extern "C" fn can_kirby_copy(kind: i32, slot: i32) -> bool {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {
+                    let article_hash = hash_str_to_u64("kirby_cant_copy");
+                    if let Some(value) = params.get_int(article_hash,0){
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    #[export_name = "FighterParamModule__can_villager_pocket"]
+    pub extern "C" fn can_villager_pocket(kind: i32, slot: i32, weapon_kind: i32) -> bool {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {
+                    let article_hash = hash_str_to_u64("villager_cant_pocket");
+                    if let Some(value) = params.get_int(article_hash,weapon_kind.abs() as u64) {
+                        return false;
+                    }
+                    else if let Some(value) = params.get_int(article_hash,0) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
 }
 
 #[no_mangle]
@@ -276,15 +327,28 @@ impl FighterParamModule {
 /// // remove doc's walljump on slot 1
 /// let slots = vec![1];
 /// let param = (hash40("wall_jump_type"),0 as u64);
-/// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param, 0);
+/// param_config::update_int(*FIGHTER_KIND_MARIOD, slots.clone(), param, 0);
 /// ```
 pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32)
 {
     let mut manager = PARAM_MANAGER.write();
     manager.update_int(kind,slots.clone(),index,value);
+
     if index.0 == hash40("article_use_type"){
         *HOOK_ARTICLES.write() = true;
         hook::install_articles();
+    }
+    else if index.0 == hash40("kirby_cant_copy"){
+        *HOOK_KIRBY.write() = true;
+        hook::install_kirby();
+    }
+    else if index.0 == hash40("villager_cant_pocket"){
+        *HOOK_VILLAGER.write() = true;
+        hook::install_villager();
+    }
+    else {
+        *HOOK_PARAMS.write() = true;
+        hook::install_params();
     }
 }
 
@@ -303,20 +367,11 @@ pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: 
 /// // remove doc's walljump on slot 1
 /// let slots = vec![1];
 /// let param = (hash40("wall_jump_type"),0 as u64,0);
-/// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param);
+/// param_config::update_int(*FIGHTER_KIND_MARIOD, slots.clone(), param);
 /// ```
 pub extern "C" fn update_int_2(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
 {
-    let mut manager = PARAM_MANAGER.write();
-    manager.update_int(kind,slots.clone(),(param.0,param.1),param.2);
-    if param.0 == hash40("article_use_type"){
-        *HOOK_ARTICLES.write() = true;
-        hook::install_articles();
-    }
-    else{
-        *HOOK_PARAMS.write() = true;
-        hook::install_params();
-    }
+    update_int(kind,slots,(param.0,param.1),param.2);
 }
 
 #[no_mangle]
@@ -365,8 +420,5 @@ pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value
 /// ```
 pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
 {
-    let mut manager = PARAM_MANAGER.write();
-    manager.update_float(kind,slots,(param.0,param.1),param.2);
-    *HOOK_PARAMS.write() = true;
-    hook::install_params();
+    update_float(kind,slots,(param.0,param.1),param.2);
 }
