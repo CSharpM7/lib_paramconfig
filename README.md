@@ -60,7 +60,7 @@ slots = [0,1,2] #(~OPTIONAL~)
 
 [[param_int]]
 param = "villager_cant_pocket" #(Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`)
-subparam = "koopajr_cannonball" #(Kind of weapon to prevent being pocketed. if you set this to "" (or 0 in the api, see below), then every weaponkind under the fighter/slot will be included)
+subparam = "koopajr_cannonball" #(Kind of weapon to prevent being pocketed. if you set this to "", then every weapon kind under the fighter/slot will be included)
 value = 0
 kinds = ["mario"] #(~OPTIONAL~)
 slots = [-1] #(~OPTIONAL~)
@@ -86,3 +86,10 @@ Slots: Vector Array of slots
 Index: (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
 
 Value: Value for the param
+
+```
+param_config::disable_kirby_copy(kind: i32, slots: Vec<i32>)
+param_config::disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kind: i32)
+```
+
+Weapon kind: Weapon Kind to prevent being pocketed. If this is 0, then all weapons spawned from kind/slots will be accounted for

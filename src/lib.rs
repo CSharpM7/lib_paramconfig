@@ -422,3 +422,44 @@ pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32)
 {
     update_float(kind,slots,(param.0,param.1),param.2);
 }
+
+#[no_mangle]
+/// Prevents Kirby from copying the ability of a fighter kind and slot
+///
+/// # Arguments
+///
+/// * `kind` - Fighter kind, as commonly used like *FIGHTER_KIND_MARIOD.
+/// * `slots` - Array of effected slots
+///
+/// # Example
+///
+/// ```
+/// // Prevent Kirby from copying Dr Mario's first alt
+/// let slots = vec![1];
+/// param_config::disable_kirby_copy(*FIGHTER_KIND_MARIOD, slots.clone());
+/// ```
+pub extern "C" fn disable_kirby_copy(kind: i32, slots: Vec<i32>)
+{
+    update_int(kind,slots,(hash40("kirby_cant_copy"),0),0);
+}
+
+#[no_mangle]
+/// Prevents Villager/Isabelle from pocketting a weapon if it spawned from a given fighter kind and slot
+///
+/// # Arguments
+///
+/// * `kind` - Fighter kind, as commonly used like *FIGHTER_KIND_MARIOD.
+/// * `slots` - Array of effected slots
+/// * `weapon_kind` - Weapon kind. If this is 0, then all weapons spawned from kind/slots will be accounted for
+///
+/// # Example
+///
+/// ```
+/// // Prevent Villager from pocketing Dr Mario's first alt's Pill
+/// let slots = vec![1];
+/// param_config::disable_villager_pocket(*FIGHTER_KIND_MARIOD, slots.clone(), *WEAPON_KIND_MARIOD_DRCAPSULE);
+/// ```
+pub extern "C" fn disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kind: i32)
+{
+    update_int(kind,slots,(hash40("villager_cant_pocket"),weapon_kind.abs() as u64),0);
+}
