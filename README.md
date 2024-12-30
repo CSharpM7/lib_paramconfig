@@ -60,7 +60,7 @@ slots = [0,1,2] #(~OPTIONAL~)
 
 [[param_int]]
 param = "villager_cant_pocket" #(Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`)
-subparam = "koopajr_cannonball" #(Kind of weapon to prevent being pocketed)
+subparam = "koopajr_cannonball" #(Kind of weapon to prevent being pocketed. if you set this to 0, then every weaponkind under the fighter/slot will be included)
 value = 0
 kinds = ["mario"] #(~OPTIONAL~)
 slots = [-1] #(~OPTIONAL~)
