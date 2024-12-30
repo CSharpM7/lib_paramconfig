@@ -885,10 +885,12 @@ pub unsafe fn read_config(config_file: String) -> bool
             let subparam_str = subparam_string.as_str();
             let mut subparam_hash = 0;
             if param.param == "villager_cant_pocket" {
-                subparam_hash = (get_weapon_kind_from_string(&subparam_string).abs()) as u64;
-                if subparam_hash == 999 {
-                    println!("[libparam_config::nro::data] {} is an invalid weapon",&subparam_string);
-                    continue;
+                if hash_str_to_u64(&subparam_string) != 0 {
+                    subparam_hash = (get_weapon_kind_from_string(&subparam_string).abs()) as u64;
+                    if subparam_hash == 999 {
+                        println!("[libparam_config::nro::data] {} is an invalid weapon",&subparam_string);
+                        continue;
+                    }
                 }
             } 
             else {
