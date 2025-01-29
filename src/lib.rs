@@ -50,6 +50,7 @@ pub fn hash_str_to_u64(param: &str) -> u64
 }
 
 lazy_static! {
+    static ref IN_GAME: RwLock<bool> = RwLock::new(false);
     static ref HOOK_ARTICLES: RwLock<bool> = RwLock::new(false);
     static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
     static ref HOOK_KIRBY: RwLock<bool> = RwLock::new(false);
@@ -61,28 +62,31 @@ lazy_static! {
     static ref HASH_ANY: RwLock<u64> = RwLock::new(0);
 }
 
-pub fn can_Hook_Articles() -> bool {
-    return *HOOK_ARTICLES.read() && !is_Hooked_Articles();
+pub fn is_in_game() -> bool {
+    return *IN_GAME.read();
 }
-pub fn can_Hook_Params() -> bool {
-    return *HOOK_PARAMS.read() && !is_Hooked_Params();
+pub fn can_hook_articles() -> bool {
+    return *HOOK_ARTICLES.read() && !is_hooked_articles();
 }
-pub fn can_Hook_Kirby() -> bool {
-    return *HOOK_KIRBY.read() && !is_Hooked_Kirby();
+pub fn can_hook_params() -> bool {
+    return *HOOK_PARAMS.read() && !is_hooked_params();
 }
-pub fn can_Hook_Villager() -> bool {
-    return *HOOK_VILLAGER.read() && !is_Hooked_Villager();
+pub fn can_hook_kirby() -> bool {
+    return *HOOK_KIRBY.read() && !is_hooked_kirby();
 }
-pub fn is_Hooked_Articles() -> bool {
+pub fn can_hook_villager() -> bool {
+    return *HOOK_VILLAGER.read() && !is_hooked_villager();
+}
+pub fn is_hooked_articles() -> bool {
     return *IS_HOOKED_ARTICLES.read();
 }
-pub fn is_Hooked_Params() -> bool {
+pub fn is_hooked_params() -> bool {
     return *IS_HOOKED_PARAMS.read();
 }
-pub fn is_Hooked_Kirby() -> bool {
+pub fn is_hooked_kirby() -> bool {
     return *IS_HOOKED_KIRBY.read();
 }
-pub fn is_Hooked_Villager() -> bool {
+pub fn is_hooked_villager() -> bool {
     return *IS_HOOKED_VILLAGER.read();
 }
 pub fn set_hash_any() {
