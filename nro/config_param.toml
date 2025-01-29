@@ -4,15 +4,35 @@ slots = [0,1,2]
 [[param_int]]
 param = "jump_squat_frame"
 subparam = ""
-value = 6
+value = 12
 
 [[param_int]]
 param = "wall_jump_type"
 subparam = ""
-value = 0
+value = 1
+
+[[attribute_mul]]
+param = "jump_initial_y"
+subparam = ""
+value = 2.0
 
 [[attribute_mul]]
 param = "jump_y"
+subparam = ""
+value = 2.0
+
+[[attribute_mul]]
+param = "jump_aerial_y"
+subparam = ""
+value = 2.0
+
+[[attribute_mul]]
+param = "mini_jump_y"
+subparam = ""
+value = 2.0
+
+[[attribute_mul]]
+param = "run_speed_max"
 subparam = ""
 value = 2.0
 
@@ -33,12 +53,12 @@ slots = [0,1,2]
 [[param_float]]
 param = "param_special_lw"
 subparam = "buoyancy"
-value = 4.0
+value = 8.0
 
 [[param_float]]
 param = "param_special_lw"
 subparam = "buoyancy_max"
-value = 4.0
+value = 8.0
 
 [[param_int]]
 param = "article_use_type"

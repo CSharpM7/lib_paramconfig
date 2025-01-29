@@ -135,7 +135,7 @@ impl CharacterParam {
         }
         return None;
     }
-    pub fn get_int_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
+    pub fn get_int_param_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
         if let Some(value) = self.mul_ints.get(&(param_type,param_hash)){
             return Some(*value);
         }
@@ -152,10 +152,10 @@ pub struct ParamManager {
     pub params: Vec<CharacterParam>
 }
 
-const TYPE_INT: i32 = 0;
-const TYPE_FLOAT: i32 = 1;
-const TYPE_ATTR_MUL: i32 = 2;
-const TYPE_INT_MUL: i32 = 3;
+pub const PARAM_TYPE_INT: i32 = 0;
+pub const PARAM_TYPE_FLOAT: i32 = 1;
+pub const PARAM_TYPE_ATTR_MUL: i32 = 2;
+pub const PARAM_TYPE_INT_MUL: i32 = 3;
 
 impl ParamManager {
     pub(crate) fn new() -> Self {
@@ -197,15 +197,15 @@ impl ParamManager {
         return None
     }
 
-    pub fn update_value(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value_i: i32, value_f: f32,value_type: i32) {
+    fn update_value(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value_i: i32, value_f: f32,value_type: i32) {
         for param in &mut self.params {
             if (param.kind == kind) {
                 if param.slots == slots {
                     match value_type {
+                        PARAM_TYPE_FLOAT => {param.floats.insert(index, value_f);}
+                        PARAM_TYPE_ATTR_MUL => {param.attribute_muls.insert(index, value_f);}
+                        PARAM_TYPE_INT_MUL => {param.mul_ints.insert(index, value_f);}
                         _ => {param.ints.insert(index, value_i);}
-                        TYPE_FLOAT => {param.floats.insert(index, value_f);}
-                        TYPE_ATTR_MUL => {param.attribute_muls.insert(index, value_f);}
-                        TYPE_INT_MUL => {param.mul_ints.insert(index, value_f);}
                     }
                     
                     return;
@@ -222,24 +222,24 @@ impl ParamManager {
             mul_ints: HashMap::new(),
         };
         match value_type {
+            PARAM_TYPE_FLOAT => {newparams.floats.insert(index, value_f);}
+            PARAM_TYPE_ATTR_MUL => {newparams.attribute_muls.insert(index, value_f);}
+            PARAM_TYPE_INT_MUL => {newparams.mul_ints.insert(index, value_f);}
             _ => {newparams.ints.insert(index,value_i);}
-            TYPE_FLOAT => {newparams.floats.insert(index, value_f);}
-            TYPE_ATTR_MUL => {newparams.attribute_muls.insert(index, value_f);}
-            TYPE_INT_MUL => {newparams.mul_ints.insert(index, value_f);}
         }
         self.push(newparams);
     }
     pub fn update_int(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32) {
-        self.update_value(kind,slots,index,value,0.0,TYPE_INT);
+        self.update_value(kind,slots,index,value,0.0,PARAM_TYPE_INT);
     }
     pub fn update_float(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
-        self.update_value(kind,slots,index,0,value,TYPE_FLOAT);
+        self.update_value(kind,slots,index,0,value,PARAM_TYPE_FLOAT);
     }
     pub fn update_attribute_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
-        self.update_value(kind,slots,index,0,value,TYPE_ATTR_MUL);
+        self.update_value(kind,slots,index,0,value,PARAM_TYPE_ATTR_MUL);
     }
     pub fn update_int_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
-        self.update_value(kind,slots,index,0,value,TYPE_INT_MUL);
+        self.update_value(kind,slots,index,0,value,PARAM_TYPE_INT_MUL);
     }
     
 }
@@ -294,6 +294,20 @@ impl FighterParamModule {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
                 if params.slots.contains(&slot) || params.has_all_slots {  
                     if let Some(value) = params.get_attribute_mul(param_type, param_hash){
+                        return Some(value);
+                    }      
+                }
+            }
+        }
+        return None;
+    }
+    #[export_name = "FighterParamModule__get_int_param_mul"]
+    pub extern "C" fn get_int_param_mul(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {  
+                    if let Some(value) = params.get_int_param_mul(param_type, param_hash){
                         return Some(value);
                     }      
                 }
@@ -538,7 +552,7 @@ pub extern "C" fn update_int_mul_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f3
 /// ```
 /// // Prevent Kirby from copying Dr Mario's first alt
 /// let slots = vec![1];
-/// param_config::set_article_use_type(*WEAPON_KIND_MARIOD_CAPSULEBLOCK, *ARTICLE_USETYPE_NORMAL);
+/// param_config::set_article_use_type(*WEAPON_KIND_MARIOD_CAPSULEBLOCK, *ARTICLE_USETYPE_FINAL);
 /// ```
 pub extern "C" fn set_article_use_type(kind: i32, use_type: i32)
 {
