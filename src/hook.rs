@@ -6,7 +6,6 @@ use {
     }
 };
 use super::*;
-//use super::data::*;
 use skyline::hooks::{
     getRegionAddress, 
     Region, 
@@ -14,19 +13,13 @@ use skyline::hooks::{
 };
 
 
-//Related to Param Edits
-/*
-#[skyline::hook(offset=0x3f0048, inline)]
-pub unsafe fn offset_dump(ctx: &InlineCtx) {
-	let text = skyline::hooks::getRegionAddress(skyline::hooks::Region::Text) as u64;
-	println!("Function Offset: {:#X}", ctx.registers[8].x.as_ref() - text);
-}
-*/
 static INT_OFFSET: usize = 0x4e53a0; // 13.0.2
 static FLOAT_OFFSET: usize = 0x4e53e0; // 13.0.2
 
 #[skyline::hook(offset=INT_OFFSET)]
 pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) -> i32 {
+    let original_value = original!()(module, param_type, param_hash);
+
     let mut module_accessor = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let module_accessor_reference = &mut *module_accessor;
     let id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
@@ -43,17 +36,23 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
 
     if FighterParamModule::has_kind(fighter_kind)
     {
-        if let Some(new_param) = FighterParamModule::get_int_param(fighter_kind, slot,param_type, param_hash){
+        if let Some(mult) = FighterParamModule::get_int_param_mul(fighter_kind, slot,param_type, param_hash){
+            let temp = (original_value as f32) * mult;
+            return temp as i32;
+        }
+        else if let Some(new_param) = FighterParamModule::get_int_param(fighter_kind, slot,param_type, param_hash){
             return new_param;
         }
     }
 
-    original!()(module, param_type, param_hash)
+    return original_value;
 }
 
 
 #[skyline::hook(offset=FLOAT_OFFSET)]
 pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64) -> f32 {
+    let original_value = original!()(module, param_type, param_hash);
+
     let mut module_accessor = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let module_accessor_reference = &mut *module_accessor;
     let id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
@@ -70,12 +69,15 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
 
     if FighterParamModule::has_kind(fighter_kind)
     {
-        if let Some(new_param) = FighterParamModule::get_float_param(fighter_kind, slot,param_type, param_hash){
+        if let Some(mult) = FighterParamModule::get_attribute_mul(fighter_kind, slot,param_type, param_hash) {
+            return original_value*mult;
+        }
+        else if let Some(new_param) = FighterParamModule::get_float_param(fighter_kind, slot,param_type, param_hash) {
             return new_param;
         }
     }
-    original!()(module, param_type, param_hash)
 
+    return original_value;
 }
 
 
@@ -220,19 +222,26 @@ unsafe fn villager_cant_pocket(fighter: &mut Fighter, is_kirby: bool) {
     }
 }
 
+// Only used to set if we're in game
+#[skyline::hook(offset = 0x1a2625c, inline)]
+unsafe fn read_melee_mode(ctx: &mut skyline::hooks::InlineCtx) {
+    *super::IN_GAME.write() = true;
+}
+
 pub fn install_params() {
     super::set_hash_any();
-    if super::can_Hook_Params() {
+    if super::can_hook_params() {
         println!("[libparam_config] Hooking GetParam functions");
         skyline::install_hooks!(
             get_param_int_hook,
             get_param_float_hook,
+            //read_melee_mode
         );
         *super::IS_HOOKED_PARAMS.write() = true;
     }
 }
 pub fn install_articles() {
-    if super::can_Hook_Articles() {
+    if super::can_hook_articles() {
         println!("[libparam_config] Hooking Article Use Type function");
         skyline::install_hooks!(
             get_article_use_type_mask
@@ -241,7 +250,7 @@ pub fn install_articles() {
     }
 }
 pub fn install_kirby() {
-    if super::can_Hook_Kirby() || super::can_Hook_Villager() {
+    if super::can_hook_kirby() || super::can_hook_villager() {
         println!("[libparam_config] Hooking Kirby Frame vtable");
         skyline::install_hooks!(
             kirby_opff
@@ -250,7 +259,7 @@ pub fn install_kirby() {
     }
 }
 pub fn install_villager() {
-    if super::can_Hook_Villager() {
+    if super::can_hook_villager() {
         println!("[libparam_config] Hooking Villager Status Change vtable");
         skyline::install_hooks!(
             villager_opff

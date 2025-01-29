@@ -6,6 +6,5 @@ Cargo.lock
 **/src/custom
 **/src/mario
 *.lnk
-*.ps1
 .devcontainer/Dockerfile
 .devcontainer/Dockerfile

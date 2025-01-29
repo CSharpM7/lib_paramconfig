@@ -22,48 +22,49 @@ All end-users will need to download an updated `libparam_config.nro` from the re
 ## Toml Layout
 
 ```
-kind = "mario" #(~OPTIONAL~ The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario")
-slots = [0,1,...] #(~OPTIONAL~ The default list of effected slots (alt costume numbers). Use -1 to apply to all costumes. Any param that doesn't have a `slots` value will default to this list)
+kind = "mario" #~OPTIONAL~ The default kind for this toml. Any param that doesn't have a `kinds` value will default to this. This should be whatever comes after FIGHTER_KIND_. Ie "MARIO" or "mario"
+slots = [0,1,...] #~OPTIONAL~ The default list of effected slots (alt costume numbers). Use -1 to apply to all costumes. Any param that doesn't have a `slots` value will default to this list
 
 [[param_int]]
-param = "param_fireball" #(the cracked hash name found when viewing in prceditor)
-subparam = "life" #(the cracked hash of the subcategory of this param. It might includes things like "life" or "angle")
+param = "param_fireball" #the cracked hash name found when viewing in prceditor
+subparam = "life" #the cracked hash of the subcategory of this param. It might includes things like "life" or "angle"
 value = 99 
 
-[[param_int]] #(a second param you wish to edit)
+[[param_int]] #a second param you wish to edit
 param = "wall_jump_type" 
-subparam = "" #(note for fighter attributes, you often want to leave this blank)
-value = 0 #(if you are working with a bool, use 0 for false, and 1 for true)
+subparam = "" #note for fighter attributes, you often want to leave this blank
+value = 0 #if you are working with a bool, use 0 for false, and 1 for true
 
-[[param_float]] #(you can also get rid of this category if you are not editing floats. Same goes for ints)
-param = "0x06a0d82dad" #(you can also use the raw hash version, as long as it begins with 0x)
+[[attribute_mul]] #For fighter attributes (subparam=0) that are floats, you'll want to use a multiplier instead of setting the value directly
+param = "jump_y" 
 subparam = ""
-value = 60.0
+value = 2.0 #This will make Dr Mario jump twice as high (regardless of his equipment)
+
+[[attribute_mul]] #you can also get rid of this category if you are not editing floats. Same goes for ints
+param = "0x607cd5541" #you can also use the raw hash version, as long as it begins with 0x
+subparam = ""
+value = 2.0
 
 [[param_float]]
 param = "param_fireball"
 subparam = "gravity_accel"
 value = 0.0
-kinds = ["mario","mario_fireball"] #(~OPTIONAL~ For weapons, I recommend including their weapon kind in the list as well)
-slots = [0,1,2] #(~OPTIONAL~)
+kinds = ["mario","mario_fireball"] #~OPTIONAL~ For weapons, I recommend including their weapon kind in the list as well
+slots = [0,1,2] #~OPTIONAL~
 
 [[param_int]]
-param = "article_use_type" #(For changing the use type of an article. Usually used for allowing entry/victory articles to spawn in game)
+param = "article_use_type" #For changing the use type of an article. Usually used for allowing entry/victory articles to spawn in game
 value = 1
 kinds = ["mariod_capsuleblock"]
 
 [[param_int]]
-param = "kirby_cant_copy" #(Prevents Kirby from copying the ability of a fighter `kind` if they are using a costume in `slots`)
+param = "kirby_cant_copy" #Prevents Kirby from copying the ability of a fighter `kind` if they are using a costume in `slots`
 value = 0
-kinds = ["mario"] #(~OPTIONAL~)
-slots = [0,1,2] #(~OPTIONAL~)
 
 [[param_int]]
-param = "villager_cant_pocket" #(Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`)
-subparam = "koopajr_cannonball" #(Kind of weapon to prevent being pocketed. if you set this to "", then every weapon kind under the fighter/slot will be included)
+param = "villager_cant_pocket" #Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`
+subparam = "koopajr_cannonball" #Kind of weapon to prevent being pocketed. if you set this to "", then every weapon kind under the fighter/slot will be included
 value = 0
-kinds = ["mario"] #(~OPTIONAL~)
-slots = [-1] #(~OPTIONAL~)
 ```
 
 # lib_paramconfig
@@ -78,6 +79,7 @@ Your `Cargo.toml` needs to include this dependency:
 ```
 param_config::update_int_2(kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32);
 param_config::update_float_2(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32);
+param_config::update_attribute_mul_2(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32);
 ```
 Kind: Fighter/Weapon kind, as commonly used like `*FIGHTER_KIND_MARIOD`. If it's a weapon, use a negative number.
 
@@ -85,11 +87,13 @@ Slots: Vector Array of slots
 
 Index: (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
 
-Value: Value for the param
+Value: Value for the param. Keep in mind that the `_mul` functions will multiply the original rather than set a new value.
 
 ```
-param_config::disable_kirby_copy(kind: i32, slots: Vec<i32>)
 param_config::disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kind: i32)
+param_config::disable_kirby_copy(kind: i32, slots: Vec<i32>)
+param_config::set_article_use_type(kind: i32, use_type: i32)
 ```
 
 Weapon kind: Weapon Kind to prevent being pocketed. If this is 0, then all weapons spawned from kind/slots will be accounted for
+Use_type: USETYPE const (ie *ARTICLE_USETYPE_FINAL);

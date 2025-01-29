@@ -5,7 +5,8 @@
 )]
 #![allow(
     non_snake_case,
-    unused
+    unused,
+    warnings
 )]
 #![deny(
     deprecated
@@ -29,11 +30,12 @@ use std::{
 };
 
 pub mod data;
+pub mod plugin;
 
 #[skyline::main(name = "libparam_config")]
 pub fn main() {
     println!("[libparam_config::nro] Loading...");
-    if !data::install() {
+    if !plugin::install() {
         println!("[libparam_config::nro] No param data found");
     }
     else{

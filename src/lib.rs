@@ -50,6 +50,7 @@ pub fn hash_str_to_u64(param: &str) -> u64
 }
 
 lazy_static! {
+    static ref IN_GAME: RwLock<bool> = RwLock::new(false);
     static ref HOOK_ARTICLES: RwLock<bool> = RwLock::new(false);
     static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
     static ref HOOK_KIRBY: RwLock<bool> = RwLock::new(false);
@@ -61,28 +62,31 @@ lazy_static! {
     static ref HASH_ANY: RwLock<u64> = RwLock::new(0);
 }
 
-pub fn can_Hook_Articles() -> bool {
-    return *HOOK_ARTICLES.read() && !is_Hooked_Articles();
+pub fn is_in_game() -> bool {
+    return *IN_GAME.read();
 }
-pub fn can_Hook_Params() -> bool {
-    return *HOOK_PARAMS.read() && !is_Hooked_Params();
+pub fn can_hook_articles() -> bool {
+    return *HOOK_ARTICLES.read() && !is_hooked_articles();
 }
-pub fn can_Hook_Kirby() -> bool {
-    return *HOOK_KIRBY.read() && !is_Hooked_Kirby();
+pub fn can_hook_params() -> bool {
+    return *HOOK_PARAMS.read() && !is_hooked_params();
 }
-pub fn can_Hook_Villager() -> bool {
-    return *HOOK_VILLAGER.read() && !is_Hooked_Villager();
+pub fn can_hook_kirby() -> bool {
+    return *HOOK_KIRBY.read() && !is_hooked_kirby();
 }
-pub fn is_Hooked_Articles() -> bool {
+pub fn can_hook_villager() -> bool {
+    return *HOOK_VILLAGER.read() && !is_hooked_villager();
+}
+pub fn is_hooked_articles() -> bool {
     return *IS_HOOKED_ARTICLES.read();
 }
-pub fn is_Hooked_Params() -> bool {
+pub fn is_hooked_params() -> bool {
     return *IS_HOOKED_PARAMS.read();
 }
-pub fn is_Hooked_Kirby() -> bool {
+pub fn is_hooked_kirby() -> bool {
     return *IS_HOOKED_KIRBY.read();
 }
-pub fn is_Hooked_Villager() -> bool {
+pub fn is_hooked_villager() -> bool {
     return *IS_HOOKED_VILLAGER.read();
 }
 pub fn set_hash_any() {
@@ -96,7 +100,9 @@ pub struct CharacterParam {
     pub has_all_slots: bool,
     pub slots: Vec<i32>,
     pub ints: HashMap<(u64,u64),i32>,
-    pub floats: HashMap<(u64,u64),f32>
+    pub floats: HashMap<(u64,u64),f32>,
+    pub attribute_muls: HashMap<(u64,u64),f32>,
+    pub mul_ints: HashMap<(u64,u64),f32>,
 }
 impl PartialEq for CharacterParam {
     fn eq(&self, other: &Self) -> bool {
@@ -124,8 +130,23 @@ impl CharacterParam {
         }
         return None;
     }
-    pub fn insert_float(&mut self, param_type: u64, param_hash: u64, value: f32) {
-        self.floats.insert((param_type,param_hash), value);
+    pub fn get_attribute_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
+        if let Some(value) = self.attribute_muls.get(&(param_type,param_hash)){
+            return Some(*value);
+        }
+        else if let Some(value) = self.attribute_muls.get(&(*HASH_ANY.read(),param_hash)){
+            return Some(*value);
+        }
+        return None;
+    }
+    pub fn get_int_param_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
+        if let Some(value) = self.mul_ints.get(&(param_type,param_hash)){
+            return Some(*value);
+        }
+        else if let Some(value) = self.mul_ints.get(&(*HASH_ANY.read(),param_hash)){
+            return Some(*value);
+        }
+        return None;
     }
 }
 
@@ -134,6 +155,11 @@ pub struct ParamManager {
     pub has_all: bool,
     pub params: Vec<CharacterParam>
 }
+
+pub const PARAM_TYPE_INT: i32 = 0;
+pub const PARAM_TYPE_FLOAT: i32 = 1;
+pub const PARAM_TYPE_ATTR_MUL: i32 = 2;
+pub const PARAM_TYPE_INT_MUL: i32 = 3;
 
 impl ParamManager {
     pub(crate) fn new() -> Self {
@@ -175,11 +201,17 @@ impl ParamManager {
         return None
     }
 
-    pub fn update_int(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32) {
+    fn update_value(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value_i: i32, value_f: f32,value_type: i32) {
         for param in &mut self.params {
             if (param.kind == kind) {
                 if param.slots == slots {
-                    param.ints.insert(index, value);
+                    match value_type {
+                        PARAM_TYPE_FLOAT => {param.floats.insert(index, value_f);}
+                        PARAM_TYPE_ATTR_MUL => {param.attribute_muls.insert(index, value_f);}
+                        PARAM_TYPE_INT_MUL => {param.mul_ints.insert(index, value_f);}
+                        _ => {param.ints.insert(index, value_i);}
+                    }
+                    
                     return;
                 }
             }
@@ -189,31 +221,29 @@ impl ParamManager {
             has_all_slots: (slots.contains(&-1)),
             slots: slots,
             ints: HashMap::new(),
-            floats: HashMap::new()
+            floats: HashMap::new(),
+            attribute_muls: HashMap::new(),
+            mul_ints: HashMap::new(),
         };
-        newparams.ints.insert(index,value);
+        match value_type {
+            PARAM_TYPE_FLOAT => {newparams.floats.insert(index, value_f);}
+            PARAM_TYPE_ATTR_MUL => {newparams.attribute_muls.insert(index, value_f);}
+            PARAM_TYPE_INT_MUL => {newparams.mul_ints.insert(index, value_f);}
+            _ => {newparams.ints.insert(index,value_i);}
+        }
         self.push(newparams);
     }
+    pub fn update_int(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32) {
+        self.update_value(kind,slots,index,value,0.0,PARAM_TYPE_INT);
+    }
     pub fn update_float(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
-        let i0 = index.0;
-        let i1 = index.1;
-        for param in &mut self.params {
-            if (param.kind == kind) {
-                if param.slots == slots {
-                    param.floats.insert(index, value);
-                    return;
-                }
-            }
-        }
-        let mut newparams = CharacterParam {
-            kind: kind,
-            has_all_slots: (slots.contains(&-1)),
-            slots: slots,
-            ints: HashMap::new(),
-            floats: HashMap::new()
-        };
-        newparams.floats.insert(index,value);
-        self.push(newparams);
+        self.update_value(kind,slots,index,0,value,PARAM_TYPE_FLOAT);
+    }
+    pub fn update_attribute_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
+        self.update_value(kind,slots,index,0,value,PARAM_TYPE_ATTR_MUL);
+    }
+    pub fn update_int_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
+        self.update_value(kind,slots,index,0,value,PARAM_TYPE_INT_MUL);
     }
     
 }
@@ -254,6 +284,34 @@ impl FighterParamModule {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
                 if params.slots.contains(&slot) || params.has_all_slots {  
                     if let Some(value) = params.get_float(param_type, param_hash){
+                        return Some(value);
+                    }      
+                }
+            }
+        }
+        return None;
+    }
+    #[export_name = "FighterParamModule__get_attribute_mul"]
+    pub extern "C" fn get_attribute_mul(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {  
+                    if let Some(value) = params.get_attribute_mul(param_type, param_hash){
+                        return Some(value);
+                    }      
+                }
+            }
+        }
+        return None;
+    }
+    #[export_name = "FighterParamModule__get_int_param_mul"]
+    pub extern "C" fn get_int_param_mul(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {  
+                    if let Some(value) = params.get_int_param_mul(param_type, param_hash){
                         return Some(value);
                     }      
                 }
@@ -367,7 +425,7 @@ pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: 
 /// // remove doc's walljump on slot 1
 /// let slots = vec![1];
 /// let param = (hash40("wall_jump_type"),0 as u64,0);
-/// param_config::update_int(*FIGHTER_KIND_MARIOD, slots.clone(), param);
+/// param_config::update_int_2(*FIGHTER_KIND_MARIOD, slots.clone(), param);
 /// ```
 pub extern "C" fn update_int_2(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
 {
@@ -376,6 +434,7 @@ pub extern "C" fn update_int_2(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
 
 #[no_mangle]
 /// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
+/// Recommended to only do this for vl.prc entries, and not fighter attributes (see update_attribute_mul)
 ///
 /// # Arguments
 ///
@@ -387,9 +446,9 @@ pub extern "C" fn update_int_2(kind: i32, slots: Vec<i32>,param: (u64,u64,i32))
 /// # Example
 ///
 /// ```
-/// // let doc run super fast on slot 1
+/// // Set Doc's Down Special Buoyancy to 3.0 on slot 1
 /// let slots = vec![1];
-/// let param = (hash40("run_speed_max"),0 as u64);
+/// let param = (hash40("param_special_lw"),hash40("buoyancy"));
 /// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param, 3.0);
 /// ```
 pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
@@ -402,6 +461,56 @@ pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value
 
 #[no_mangle]
 /// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
+/// Recommended to only do this for vl.prc entries, and not fighter attributes (see update_attribute_mul)
+/// 
+/// # Arguments
+///
+/// * `kind` - Fighter/Weapon kind, as commonly used like *FIGHTER_KIND_MARIOD. If it's a weapon, use a negative number.
+/// * `slots` - Array of effected slots
+/// * `param` - (hash40(""),hash40(""),f32) for param/subparam hashes and value. For common params, the second argument should be 0.
+///
+///
+/// # Example
+///
+/// ```
+/// // Set Doc's Down Special Buoyancy to 3.0 on slot 1
+/// let slots = vec![1];
+/// let param = (hash40("param_special_lw"),hash40("buoyancy"), 3.0);
+/// param_config::update_float_2(*FIGHTER_KIND_MARIOD, slots.clone(), param);
+/// ```
+pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
+{
+    update_float(kind,slots,(param.0,param.1),param.2);
+}
+
+#[no_mangle]
+/// Updates (or creates) an attribute multiplier based on fighter/weapon kind and current alternate costume (slot)
+///
+/// # Arguments
+///
+/// * `kind` - Fighter/Weapon kind, as commonly used like *FIGHTER_KIND_MARIOD. If it's a weapon, use a negative number.
+/// * `slots` - Array of effected slots
+/// * `index` - (hash40(""),hash40("")) for param/subparam hashes. For common params, the second argument should be 0.
+/// * `value` - Value for the param
+///
+/// # Example
+///
+/// ```
+/// // let doc run twice as fast on slot 1
+/// let slots = vec![1];
+/// let param = (hash40("run_speed_max"),0 as u64);
+/// param_config::update_attribute_mul(*FIGHTER_KIND_MARIOD, slots.clone(), param, 2.0);
+/// ```
+pub extern "C" fn update_attribute_mul(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
+{
+    let mut manager = PARAM_MANAGER.write();
+    manager.update_attribute_mul(kind,slots,index,value);
+    *HOOK_PARAMS.write() = true;
+    hook::install_params();
+}
+
+#[no_mangle]
+/// Updates (or creates) an attribute multiplier based on fighter/weapon kind and current alternate costume (slot)
 ///
 /// # Arguments
 ///
@@ -413,16 +522,27 @@ pub extern "C" fn update_float(kind: i32, slots: Vec<i32>,index: (u64,u64),value
 /// # Example
 ///
 /// ```
-/// // let doc run super fast on slot 1
+/// // let doc run twice as fast on slot 1
 /// let slots = vec![1];
-/// let param = (hash40("run_speed_max"),0 as u64, 3.0);
-/// param_config::update_float(*FIGHTER_KIND_MARIOD, slots.clone(), param);
+/// let param = (hash40("run_speed_max"),0 as u64, 2.0);
+/// param_config::update_attribute_mul_2(*FIGHTER_KIND_MARIOD, slots.clone(), param);
 /// ```
-pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
+pub extern "C" fn update_attribute_mul_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
 {
-    update_float(kind,slots,(param.0,param.1),param.2);
+    update_attribute_mul(kind,slots,(param.0,param.1),param.2);
 }
 
+pub extern "C" fn update_int_mul(kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32)
+{
+    let mut manager = PARAM_MANAGER.write();
+    manager.update_int_mul(kind,slots,index,value);
+    *HOOK_PARAMS.write() = true;
+    hook::install_params();
+}
+pub extern "C" fn update_int_mul_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32))
+{
+    update_int_mul(kind,slots,(param.0,param.1),param.2);
+}
 #[no_mangle]
 /// Changes the article use type, potentially allowing the article to be spawned during different game states
 ///
@@ -436,7 +556,7 @@ pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32)
 /// ```
 /// // Prevent Kirby from copying Dr Mario's first alt
 /// let slots = vec![1];
-/// param_config::set_article_use_type(*WEAPON_KIND_MARIOD_CAPSULEBLOCK, *ARTICLE_USETYPE_NORMAL);
+/// param_config::set_article_use_type(*WEAPON_KIND_MARIOD_CAPSULEBLOCK, *ARTICLE_USETYPE_FINAL);
 /// ```
 pub extern "C" fn set_article_use_type(kind: i32, use_type: i32)
 {
