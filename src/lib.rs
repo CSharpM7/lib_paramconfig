@@ -424,6 +424,25 @@ pub extern "C" fn update_float_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f32)
 }
 
 #[no_mangle]
+/// Changes the article use type, potentially allowing the article to be spawned during different game states
+///
+/// # Arguments
+///
+/// * `kind` - Weapon Kind
+/// * `use_type` - i32 value of desired *ARTICLE_USETYPE const
+///
+/// # Example
+///
+/// ```
+/// // Prevent Kirby from copying Dr Mario's first alt
+/// let slots = vec![1];
+/// param_config::set_article_use_type(*WEAPON_KIND_MARIOD_CAPSULEBLOCK, *ARTICLE_USETYPE_NORMAL);
+/// ```
+pub extern "C" fn set_article_use_type(kind: i32, use_type: i32)
+{
+    update_int(-(kind.abs()),vec![1],(hash40("article_use_type"),0),use_type);
+}
+#[no_mangle]
 /// Prevents Kirby from copying the ability of a fighter kind and slot
 ///
 /// # Arguments
