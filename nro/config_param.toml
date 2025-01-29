@@ -11,10 +11,10 @@ param = "wall_jump_type"
 subparam = ""
 value = 0
 
-[[param_float]]
+[[attribute_mul]]
 param = "jump_y"
 subparam = ""
-value = 60.0
+value = 2.0
 
 [[param_float]]
 param = "param_drcapsule"
