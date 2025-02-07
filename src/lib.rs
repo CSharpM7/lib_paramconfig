@@ -62,47 +62,47 @@ lazy_static! {
     static ref HASH_ANY: RwLock<u64> = RwLock::new(0);
 }
 
-pub fn is_in_game() -> bool {
+fn is_in_game() -> bool {
     return *IN_GAME.read();
 }
-pub fn can_hook_articles() -> bool {
+fn can_hook_articles() -> bool {
     return *HOOK_ARTICLES.read() && !is_hooked_articles();
 }
-pub fn can_hook_params() -> bool {
+fn can_hook_params() -> bool {
     return *HOOK_PARAMS.read() && !is_hooked_params();
 }
-pub fn can_hook_kirby() -> bool {
+fn can_hook_kirby() -> bool {
     return *HOOK_KIRBY.read() && !is_hooked_kirby();
 }
-pub fn can_hook_villager() -> bool {
+fn can_hook_villager() -> bool {
     return *HOOK_VILLAGER.read() && !is_hooked_villager();
 }
-pub fn is_hooked_articles() -> bool {
+fn is_hooked_articles() -> bool {
     return *IS_HOOKED_ARTICLES.read();
 }
-pub fn is_hooked_params() -> bool {
+fn is_hooked_params() -> bool {
     return *IS_HOOKED_PARAMS.read();
 }
-pub fn is_hooked_kirby() -> bool {
+fn is_hooked_kirby() -> bool {
     return *IS_HOOKED_KIRBY.read();
 }
-pub fn is_hooked_villager() -> bool {
+fn is_hooked_villager() -> bool {
     return *IS_HOOKED_VILLAGER.read();
 }
-pub fn set_hash_any() {
+fn set_hash_any() {
     if *HASH_ANY.read() == 0 {
         *HASH_ANY.write() = hash_str_to_u64("any");
     }
 }
 
-pub struct CharacterParam {
-    pub kind: i32,
-    pub has_all_slots: bool,
-    pub slots: Vec<i32>,
-    pub ints: HashMap<(u64,u64),i32>,
-    pub floats: HashMap<(u64,u64),f32>,
-    pub attribute_muls: HashMap<(u64,u64),f32>,
-    pub mul_ints: HashMap<(u64,u64),f32>,
+struct CharacterParam {
+    kind: i32,
+    has_all_slots: bool,
+    slots: Vec<i32>,
+    ints: HashMap<(u64,u64),i32>,
+    floats: HashMap<(u64,u64),f32>,
+    attribute_muls: HashMap<(u64,u64),f32>,
+    mul_ints: HashMap<(u64,u64),f32>,
 }
 impl PartialEq for CharacterParam {
     fn eq(&self, other: &Self) -> bool {
@@ -112,7 +112,7 @@ impl PartialEq for CharacterParam {
 }
 impl Eq for CharacterParam {}
 impl CharacterParam {
-    pub fn get_int(&self, param_type: u64, param_hash: u64) -> Option<i32> {
+    fn get_int(&self, param_type: u64, param_hash: u64) -> Option<i32> {
         if let Some(value) = self.ints.get(&(param_type,param_hash)){
             return Some(*value);
         }
@@ -121,7 +121,7 @@ impl CharacterParam {
         }
         return None;
     }
-    pub fn get_float(&self, param_type: u64, param_hash: u64) -> Option<f32> {
+    fn get_float(&self, param_type: u64, param_hash: u64) -> Option<f32> {
         if let Some(value) = self.floats.get(&(param_type,param_hash)){
             return Some(*value);
         }
@@ -130,7 +130,7 @@ impl CharacterParam {
         }
         return None;
     }
-    pub fn get_attribute_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
+    fn get_attribute_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
         if let Some(value) = self.attribute_muls.get(&(param_type,param_hash)){
             return Some(*value);
         }
@@ -139,7 +139,7 @@ impl CharacterParam {
         }
         return None;
     }
-    pub fn get_int_param_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
+    fn get_int_param_mul(&self, param_type: u64, param_hash: u64) -> Option<f32> {
         if let Some(value) = self.mul_ints.get(&(param_type,param_hash)){
             return Some(*value);
         }
@@ -150,10 +150,10 @@ impl CharacterParam {
     }
 }
 
-pub struct ParamManager {
-    pub kinds: Vec<i32>,
-    pub has_all: bool,
-    pub params: Vec<CharacterParam>
+struct ParamManager {
+    kinds: Vec<i32>,
+    has_all: bool,
+    params: Vec<CharacterParam>
 }
 
 pub const PARAM_TYPE_INT: i32 = 0;
@@ -169,7 +169,7 @@ impl ParamManager {
             params: Vec::new(),
         }
     }
-    pub fn push(&mut self, params: CharacterParam) {
+    fn push(&mut self, params: CharacterParam) {
         let kind = params.kind;
         if !(self.kinds.contains(&kind)) {
             self.kinds.push(kind);
@@ -180,7 +180,7 @@ impl ParamManager {
         self.params.push(params);
     }
     
-    pub fn get_param_by_slot(&self,kind: i32, slot: i32) -> Option<&CharacterParam> {
+    fn get_param_by_slot(&self,kind: i32, slot: i32) -> Option<&CharacterParam> {
         for params in &self.params{
             if (params.kind == kind) {
                 if params.slots.contains(&slot) || params.has_all_slots {
@@ -190,7 +190,7 @@ impl ParamManager {
         }
         return None
     }
-    pub fn get_param(&self,kind: i32, slots: Vec<i32>) -> Option<&CharacterParam> {
+    fn get_param(&self,kind: i32, slots: Vec<i32>) -> Option<&CharacterParam> {
         for params in &self.params{
             if (params.kind == kind) {
                 if params.slots == slots {
@@ -233,38 +233,38 @@ impl ParamManager {
         }
         self.push(newparams);
     }
-    pub fn update_int(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32) {
+    fn update_int(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: i32) {
         self.update_value(kind,slots,index,value,0.0,PARAM_TYPE_INT);
     }
-    pub fn update_float(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
+    fn update_float(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
         self.update_value(kind,slots,index,0,value,PARAM_TYPE_FLOAT);
     }
-    pub fn update_attribute_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
+    fn update_attribute_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
         self.update_value(kind,slots,index,0,value,PARAM_TYPE_ATTR_MUL);
     }
-    pub fn update_int_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
+    fn update_int_mul(&mut self,kind: i32, slots: Vec<i32>,index: (u64,u64),value: f32) {
         self.update_value(kind,slots,index,0,value,PARAM_TYPE_INT_MUL);
     }
     
 }
 
 lazy_static! {
-    pub static ref PARAM_MANAGER: RwLock<ParamManager> = RwLock::new(ParamManager::new());
+    static ref PARAM_MANAGER: RwLock<ParamManager> = RwLock::new(ParamManager::new());
 }
 
-pub struct FighterParamModule {
-    pub manager: ParamManager
+struct FighterParamModule {
+    manager: ParamManager
 }
 
 impl FighterParamModule {
     #[export_name = "FighterParamModule__has_kind"]
-    pub extern "C" fn has_kind(kind: i32) -> bool {
+    extern "C" fn has_kind(kind: i32) -> bool {
         let mut manager = PARAM_MANAGER.read();
         return manager.kinds.contains(&kind) || manager.has_all;
     }
 
     #[export_name = "FighterParamModule__get_int_param"]
-    pub extern "C" fn get_int_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<i32> {
+    extern "C" fn get_int_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
@@ -278,7 +278,7 @@ impl FighterParamModule {
         return None;
     }
     #[export_name = "FighterParamModule__get_float_param"]
-    pub extern "C" fn get_float_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
+    extern "C" fn get_float_param(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
@@ -292,7 +292,7 @@ impl FighterParamModule {
         return None;
     }
     #[export_name = "FighterParamModule__get_attribute_mul"]
-    pub extern "C" fn get_attribute_mul(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
+    extern "C" fn get_attribute_mul(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
@@ -306,7 +306,7 @@ impl FighterParamModule {
         return None;
     }
     #[export_name = "FighterParamModule__get_int_param_mul"]
-    pub extern "C" fn get_int_param_mul(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
+    extern "C" fn get_int_param_mul(kind: i32, slot: i32, param_type: u64, param_hash: u64) -> Option<f32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
@@ -320,7 +320,7 @@ impl FighterParamModule {
         return None;
     }
     #[export_name = "FighterParamModule__get_article_use_type"]
-    pub extern "C" fn get_article_use_type(kind: i32) -> Option<i32> {
+    extern "C" fn get_article_use_type(kind: i32) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
@@ -334,7 +334,7 @@ impl FighterParamModule {
     }
 
     #[export_name = "FighterParamModule__can_kirby_copy"]
-    pub extern "C" fn can_kirby_copy(kind: i32, slot: i32) -> bool {
+    extern "C" fn can_kirby_copy(kind: i32, slot: i32) -> bool {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
@@ -350,7 +350,7 @@ impl FighterParamModule {
     }
 
     #[export_name = "FighterParamModule__can_villager_pocket"]
-    pub extern "C" fn can_villager_pocket(kind: i32, slot: i32, weapon_kind: i32) -> bool {
+    extern "C" fn can_villager_pocket(kind: i32, slot: i32, weapon_kind: i32) -> bool {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
