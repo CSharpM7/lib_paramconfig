@@ -146,8 +146,17 @@ fn get_weapon_common_from_accessor<'a>(boma: &'a mut BattleObjectModuleAccessor)
 }
 
 const VILLAGER_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0xdbb940;
+const ISABELLE_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0x114c220;
 #[skyline::hook(offset = VILLAGER_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET)]
 pub unsafe extern "C" fn villager_opff(_vtable: u64, fighter: &mut Fighter) {
+    let module_accessor = fighter.battle_object.module_accessor;
+    let kind = fighter.battle_object.kind;
+    if kind == *FIGHTER_KIND_MURABITO as u32 || kind == *FIGHTER_KIND_SHIZUE as u32 {
+        villager_cant_pocket(fighter,false);
+    }
+}
+#[skyline::hook(offset = ISABELLE_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET)]
+pub unsafe extern "C" fn isabelle_opff(_vtable: u64, fighter: &mut Fighter) {
     let module_accessor = fighter.battle_object.module_accessor;
     let kind = fighter.battle_object.kind;
     if kind == *FIGHTER_KIND_MURABITO as u32 || kind == *FIGHTER_KIND_SHIZUE as u32 {
@@ -260,9 +269,10 @@ pub fn install_kirby() {
 }
 pub fn install_villager() {
     if super::can_hook_villager() {
-        println!("[libparam_config] Hooking Villager Status Change vtable");
+        println!("[libparam_config] Hooking Villager Frame vtable");
         skyline::install_hooks!(
-            villager_opff
+            villager_opff,
+            isabelle_opff
         ); 
         *super::IS_HOOKED_VILLAGER.write() = true;
 
