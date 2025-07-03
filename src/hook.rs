@@ -13,8 +13,15 @@ use skyline::hooks::{
 };
 
 
-static INT_OFFSET: usize = 0x4e53a0; // 13.0.2
-static FLOAT_OFFSET: usize = 0x4e53e0; // 13.0.2
+static INT_OFFSET: usize = 0x4e53a0; // 13.0.3
+static FLOAT_OFFSET: usize = 0x4e53e0; // 13.0.3
+static ARTICLE_OFFSET: usize = 0x3a6670; // 13.0.3
+static COPY_RESET_OFFSET: usize = 0xb96770;
+
+const VILLAGER_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0xdbb940;
+const ISABELLE_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0x114c220;
+
+const READ_MELEE_MODE_OFFSET: usize = 0x1a2625c; //unused
 
 #[skyline::hook(offset=INT_OFFSET)]
 pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) -> i32 {
@@ -81,7 +88,7 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
 }
 
 
-#[skyline::hook(offset = 0x3a6670)]
+#[skyline::hook(offset = ARTICLE_OFFSET)]
 unsafe fn get_article_use_type_mask(weapon_kind: i32, entry_id: i32) -> u8 {
     if FighterParamModule::has_kind(-weapon_kind) {
         if let Some(new_type) = FighterParamModule::get_article_use_type(-weapon_kind){
@@ -91,7 +98,7 @@ unsafe fn get_article_use_type_mask(weapon_kind: i32, entry_id: i32) -> u8 {
     call_original!(weapon_kind, entry_id)
 }
 
-#[skyline::from_offset(0xb96770)]
+#[skyline::from_offset(COPY_RESET_OFFSET)]
 fn copy_ability_reset(fighter: *mut Fighter, some_miifighter_bool: bool);
 
 unsafe fn kirby_cant_copy(fighter: &mut Fighter) {
@@ -145,8 +152,6 @@ fn get_weapon_common_from_accessor<'a>(boma: &'a mut BattleObjectModuleAccessor)
     }
 }
 
-const VILLAGER_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0xdbb940;
-const ISABELLE_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0x114c220;
 #[skyline::hook(offset = VILLAGER_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET)]
 pub unsafe extern "C" fn villager_opff(_vtable: u64, fighter: &mut Fighter) {
     let module_accessor = fighter.battle_object.module_accessor;
