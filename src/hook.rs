@@ -165,90 +165,22 @@ unsafe extern "C" fn kirby_search(_vtable: u64, fighter: &mut Fighter, log: u64)
             if custom_result != RETURN_ORIGINAL {return custom_result};
         }
         else if status_kind == *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_LOOP {
-            //let custom_result = kirby_inhale_search(fighter, log);
-            //if custom_result != RETURN_ORIGINAL {return custom_result};
+            let custom_result = kirby_inhale_search(fighter, log, true);
+            if custom_result != RETURN_ORIGINAL {return custom_result};
         }
     }
     original!()(_vtable, fighter, log)
 }
-/*
-unsafe fn check_inhale_target(fighter: &mut Fighter, object_id: u32) -> i32 {
-    let object_boma = sv_battle_object::module_accessor(object_id);
-    let object_cat = utility::get_category(&mut *object_boma);
-    let object_kind = utility::get_kind(&mut *object_boma);
-    if object_cat == *BATTLE_OBJECT_CATEGORY_WEAPON {
-        let owner_id = WorkModule::get_int(object_boma, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
-        let owner_boma = sv_battle_object::module_accessor(owner_id);
-        let owner_kind = utility::get_kind(&mut *owner_boma);
-        let owner_slot = WorkModule::get_int(owner_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
-
-        //if owner_kind is found in table
-        if FighterParamModule::has_kind(owner_kind) {
-            if let Some(new_behavior) = FighterParamModule::get_kirby_inhale_behavior(owner_kind,owner_slot,object_kind) {
-                return new_behavior;
-            }
-        }
-    }
-    return super::POCKET_BEHAVIOR_ORIGINAL;
-}
 
 unsafe fn kirby_inhale_search(fighter: &mut Fighter, log: u64, is_kirby: bool) -> u64 {
-    use wubor_utils::app::*;
-
     let module_accessor = fighter.battle_object.module_accessor;
     let status_kind = StatusModule::status_kind(module_accessor);
-    if (!is_kirby && status_kind == FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_SEARCH) ||
-    is_kirby
+    if (is_kirby && status_kind == *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_LOOP) 
     {
-        let collision_log = *(log as *const u64).add(0x10 / 0x8);
-        let collision_log = collision_log as *mut CollisionLogScuffed;
-        let collider_id = (*collision_log).opponent_object_id;
-        if collider_id == *BATTLE_OBJECT_ID_INVALID as u32 {return RETURN_ORIGINAL;}
-
-        let pocket_behavior = check_pocket_target(fighter,collider_id);
-        if pocket_behavior == super::POCKET_BEHAVIOR_ORIGINAL {return RETURN_ORIGINAL;}
-        if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {return RETURN_0;}
-
-        //Destroy weapon//
-        let weapon_boma = sv_battle_object::module_accessor(collider_id);
-        let pos = *PostureModule::pos(weapon_boma);
-        EffectModule::req(
-            weapon_boma,
-            Hash40::new("sys_erace_smoke"),
-            &Vector3f{x:pos.x,y:pos.y+2.0,z:pos.z},
-            &Vector3f{x:0.0,y:0.0,z:0.0},
-            0.625,
-            0,
-            -1,
-            false,
-            0
-        );
-        
-        use smash_script::*;
-        let weapon = get_weapon_common_from_accessor(&mut *weapon_boma);
-        smash_script::notify_event_msc_cmd!(weapon, Hash40::new_raw(0x199c462b5d));
-        
-        if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {
-            return RETURN_0;
-        }
-        
-        if pocket_behavior == super::POCKET_BEHAVIOR_MISFIRE {
-            let mut next_status = *FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_FAILURE;
-            if is_kirby {
-                if status_kind == *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_SEARCH {
-                    next_status = *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_FAILURE;
-                }
-                else if status_kind == *FIGHTER_KIRBY_STATUS_KIND_SHIZUE_SPECIAL_N_SEARCH {
-                    next_status = *FIGHTER_KIRBY_STATUS_KIND_SHIZUE_SPECIAL_N_FAILURE;
-                }
-            }
-            StatusModule::change_status_request_from_script(module_accessor, next_status, false);
-            return RETURN_0;
-        }
+        return inhale_pocket_search(fighter,log, is_kirby, true);
     }
     return RETURN_ORIGINAL;
 }
- */
 
 #[skyline::hook(offset = VILLAGER_VTABLE_ON_SEARCH)]
 pub unsafe extern "C" fn villager_search(_vtable: u64, fighter: &mut Fighter, log: u64) -> u64 {
@@ -261,7 +193,7 @@ pub unsafe extern "C" fn villager_search(_vtable: u64, fighter: &mut Fighter, lo
     }
     original!()(_vtable, fighter, log)
 }
-unsafe fn check_pocket_target(fighter: &mut Fighter, object_id: u32) -> i32 {
+unsafe fn check_inhale_pocket_target(object_id: u32, is_inhale: bool) -> i32 {
     let object_boma = sv_battle_object::module_accessor(object_id);
     let object_cat = utility::get_category(&mut *object_boma);
     let object_kind = utility::get_kind(&mut *object_boma);
@@ -273,8 +205,15 @@ unsafe fn check_pocket_target(fighter: &mut Fighter, object_id: u32) -> i32 {
 
         //if owner_kind is found in table
         if FighterParamModule::has_kind(owner_kind) {
-            if let Some(new_behavior) = FighterParamModule::get_villager_pocket_behavior(owner_kind,owner_slot,object_kind) {
-                return new_behavior;
+            if !is_inhale {
+                if let Some(new_behavior) = FighterParamModule::get_villager_pocket_behavior(owner_kind,owner_slot,object_kind) {
+                    return new_behavior;
+                }
+            }
+            else {
+                if let Some(new_behavior) = FighterParamModule::get_kirby_inhale_behavior(owner_kind,owner_slot,object_kind) {
+                    return new_behavior;
+                }
             }
         }
     }
@@ -282,47 +221,56 @@ unsafe fn check_pocket_target(fighter: &mut Fighter, object_id: u32) -> i32 {
 }
 
 unsafe fn villager_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool) -> u64 {
-    use wubor_utils::app::*;
-
     let module_accessor = fighter.battle_object.module_accessor;
     let status_kind = StatusModule::status_kind(module_accessor);
-    if (!is_kirby && status_kind == FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_SEARCH) ||
+    if (!is_kirby && status_kind == *FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_SEARCH) ||
     is_kirby
     {
-        let collision_log = *(log as *const u64).add(0x10 / 0x8);
-        let collision_log = collision_log as *mut CollisionLogScuffed;
-        let collider_id = (*collision_log).opponent_object_id;
-        if collider_id == *BATTLE_OBJECT_ID_INVALID as u32 {return RETURN_ORIGINAL;}
+        return inhale_pocket_search(fighter,log, is_kirby, false);
+    }
+    return RETURN_ORIGINAL;
+}
 
-        let pocket_behavior = check_pocket_target(fighter,collider_id);
-        if pocket_behavior == super::POCKET_BEHAVIOR_ORIGINAL {return RETURN_ORIGINAL;}
-        if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {return RETURN_0;}
+unsafe fn inhale_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool, is_inhale: bool) -> u64 {
+    use wubor_utils::app::*;
 
-        //Destroy weapon//
-        let weapon_boma = sv_battle_object::module_accessor(collider_id);
-        let pos = *PostureModule::pos(weapon_boma);
-        EffectModule::req(
-            weapon_boma,
-            Hash40::new("sys_erace_smoke"),
-            &Vector3f{x:pos.x,y:pos.y+2.0,z:pos.z},
-            &Vector3f{x:0.0,y:0.0,z:0.0},
-            0.625,
-            0,
-            -1,
-            false,
-            0
-        );
-        
-        use smash_script::*;
-        let weapon = get_weapon_common_from_accessor(&mut *weapon_boma);
-        smash_script::notify_event_msc_cmd!(weapon, Hash40::new_raw(0x199c462b5d));
-        
-        if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {
-            return RETURN_0;
-        }
-        
-        if pocket_behavior == super::POCKET_BEHAVIOR_MISFIRE {
-            let mut next_status = *FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_FAILURE;
+    let collision_log = *(log as *const u64).add(0x10 / 0x8);
+    let collision_log = collision_log as *mut CollisionLogScuffed;
+    let collider_id = (*collision_log).opponent_object_id;
+    if collider_id == *BATTLE_OBJECT_ID_INVALID as u32 {return RETURN_ORIGINAL;}
+
+    let pocket_behavior = check_inhale_pocket_target(collider_id, is_inhale);
+    if pocket_behavior == super::POCKET_BEHAVIOR_ORIGINAL {return RETURN_ORIGINAL;}
+    if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {return RETURN_0;}
+
+    //Destroy weapon//
+    let weapon_boma = sv_battle_object::module_accessor(collider_id);
+    let pos = *PostureModule::pos(weapon_boma);
+    EffectModule::req(
+        weapon_boma,
+        Hash40::new("sys_erace_smoke"),
+        &Vector3f{x:pos.x,y:pos.y+2.0,z:pos.z},
+        &Vector3f{x:0.0,y:0.0,z:0.0},
+        0.625,
+        0,
+        -1,
+        false,
+        0
+    );
+    
+    use smash_script::*;
+    let weapon = get_weapon_common_from_accessor(&mut *weapon_boma);
+    smash_script::notify_event_msc_cmd!(weapon, Hash40::new_raw(0x199c462b5d));
+    
+    if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {
+        return RETURN_0;
+    }
+    
+    let module_accessor = fighter.battle_object.module_accessor;
+    let status_kind = StatusModule::status_kind(module_accessor);
+    if pocket_behavior == super::POCKET_BEHAVIOR_MISFIRE {
+        let mut next_status = *FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_FAILURE;
+        if !is_inhale {
             if is_kirby {
                 if status_kind == *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_SEARCH {
                     next_status = *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_FAILURE;
@@ -331,9 +279,12 @@ unsafe fn villager_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool
                     next_status = *FIGHTER_KIRBY_STATUS_KIND_SHIZUE_SPECIAL_N_FAILURE;
                 }
             }
-            StatusModule::change_status_request_from_script(module_accessor, next_status, false);
-            return RETURN_0;
         }
+        else {
+            next_status = *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_END;
+        }
+        StatusModule::change_status_request_from_script(module_accessor, next_status, false);
+        return RETURN_0;
     }
     return RETURN_ORIGINAL;
 }

@@ -357,17 +357,31 @@ impl FighterParamModule {
         return true;
     }
 
+    #[export_name = "FighterParamModule__get_kirby_inhale_behavior"]
+    pub extern "C" fn get_kirby_inhale_behavior(kind: i32, slot: i32, weapon_kind: i32) -> Option<i32> {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind) {
+                let target_hash = hash_str_to_u64("kirby_inhale_behavior");
+                if let Some(value) = params.get_int(target_hash,weapon_kind as u64){
+                    return Some(value);
+                }
+            }
+        }
+        return None;
+    }
+
     #[export_name = "FighterParamModule__get_villager_pocket_behavior"]
     pub extern "C" fn get_villager_pocket_behavior(kind: i32, slot: i32, weapon_kind: i32) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
-                let pocket_hash = hash_str_to_u64("villager_pocket_behavior");
-                if let Some(value) = params.get_int(pocket_hash,weapon_kind as u64){
+                let target_hash = hash_str_to_u64("villager_pocket_behavior");
+                if let Some(value) = params.get_int(target_hash,weapon_kind as u64){
                     return Some(value);
                 }
                 let dep_hash = hash_str_to_u64("villager_cant_pocket");
-                if let Some(value) = params.get_int(pocket_hash,weapon_kind as u64){
+                if let Some(value) = params.get_int(dep_hash,weapon_kind as u64) {
                     return Some(POCKET_BEHAVIOR_MISFIRE);
                 }
             }
@@ -597,7 +611,7 @@ pub extern "C" fn update_int_mul_2(kind: i32, slots: Vec<i32>,param: (u64,u64,f3
 /// # Example
 ///
 /// ```
-/// // Prevent Kirby from copying Dr Mario's first alt
+/// // Change Doc's entrance article use type
 /// let slots = vec![1];
 /// param_config::set_article_use_type(*WEAPON_KIND_MARIOD_CAPSULEBLOCK, *ARTICLE_USETYPE_FINAL);
 /// ```
@@ -626,7 +640,30 @@ pub extern "C" fn disable_kirby_copy(kind: i32, slots: Vec<i32>)
 }
 
 #[no_mangle]
-/// Determines what Villager will do when attempting to pocket this weapon
+/// Determines what Kirby will do when attempting to inhale this weapon. Dedede and Kirby's Dedede Ability will be unaffected.
+///
+/// # Arguments
+///
+/// * `kind` - Fighter kind, as commonly used like *FIGHTER_KIND_MARIOD.
+/// * `slots` - Array of effected slots
+/// * `weapon_kind` - Weapon kind. If this is 0, then all weapons spawned from kind/slots will be accounted for
+/// * `behavior` - param_config:POCKET_BEHAVIOR const
+///
+/// # Example
+///
+/// ```
+/// // Prevent Kirby from pocketing Dr Mario's first alt's Pill
+/// let slots = vec![1];
+/// param_config::set_kirby_inhale_behavior(*FIGHTER_KIND_MARIOD, slots.clone(), 
+/// *WEAPON_KIND_MARIOD_DRCAPSULE,param_config::POCKET_BEHAVIOR_MISFIRE);
+/// ```
+pub extern "C" fn set_kirby_inhale_behavior(kind: i32, slots: Vec<i32>, weapon_kind: i32, behavior: i32)
+{
+    update_int(kind,slots,(hash40("kirby_inhale_behavior"),weapon_kind.abs() as u64),behavior);
+}
+
+#[no_mangle]
+/// Determines what Villager will do when attempting to pocket this weapon. This also affects Kirby's Villager/Isabelle ability
 ///
 /// # Arguments
 ///
