@@ -357,23 +357,22 @@ impl FighterParamModule {
         return true;
     }
 
-    #[export_name = "FighterParamModule__can_villager_pocket"]
-    pub extern "C" fn can_villager_pocket(kind: i32, slot: i32, weapon_kind: i32) -> bool {
+    #[export_name = "FighterParamModule__get_villager_pocket_behavior"]
+    pub extern "C" fn get_villager_pocket_behavior(kind: i32, slot: i32, weapon_kind: i32) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
-            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
-                if params.slots.contains(&slot) || params.has_all_slots {
-                    let article_hash = hash_str_to_u64("villager_cant_pocket");
-                    if let Some(value) = params.get_int(article_hash,weapon_kind.abs() as u64) {
-                        return false;
-                    }
-                    else if let Some(value) = params.get_int(article_hash,0) {
-                        return false;
-                    }
+            if (params.kind == kind) {
+                let pocket_hash = hash_str_to_u64("villager_pocket_behavior");
+                if let Some(value) = params.get_int(pocket_hash,weapon_kind as u64){
+                    return Some(value);
+                }
+                let dep_hash = hash_str_to_u64("villager_cant_pocket");
+                if let Some(value) = params.get_int(pocket_hash,weapon_kind as u64){
+                    return Some(POCKET_BEHAVIOR_MISFIRE);
                 }
             }
         }
-        return true;
+        return None;
     }
 
     #[export_name = "FighterParamModule__can_rosetta_pull"]
@@ -395,6 +394,19 @@ impl FighterParamModule {
         return true;
     }
 }
+
+
+/// Inhale/Pocket/Pull will do whatever they normal do when interacting with this weapon
+pub const POCKET_BEHAVIOR_ORIGINAL: i32 = 0x0;
+
+/// Inhale/Pocket/Pull will ignore this weapon
+pub const POCKET_BEHAVIOR_IGNORE: i32 = 0x1;
+
+/// Pocket will delete the weapon, Villager won't change statuses
+pub const POCKET_BEHAVIOR_DELETE: i32 = 0x2;
+
+/// Pocket will delete the weapon, but Villager will go into their Missed state
+pub const POCKET_BEHAVIOR_MISFIRE: i32 = 0x3;
 
 #[no_mangle]
 /// Updates (or creates) a new param value based on fighter/weapon kind and current alternate costume (slot)
@@ -427,7 +439,7 @@ pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: 
         *HOOK_KIRBY.write() = true;
         hook::install_kirby();
     }
-    else if index.0 == hash40("villager_cant_pocket"){
+    else if index.0 == hash40("villager_pocket_behavior"){
         *HOOK_VILLAGER.write() = true;
         hook::install_villager();
     }
@@ -614,6 +626,29 @@ pub extern "C" fn disable_kirby_copy(kind: i32, slots: Vec<i32>)
 }
 
 #[no_mangle]
+/// Determines what Villager will do when attempting to pocket this weapon
+///
+/// # Arguments
+///
+/// * `kind` - Fighter kind, as commonly used like *FIGHTER_KIND_MARIOD.
+/// * `slots` - Array of effected slots
+/// * `weapon_kind` - Weapon kind. If this is 0, then all weapons spawned from kind/slots will be accounted for
+/// * `behavior` - param_config:POCKET_BEHAVIOR const
+///
+/// # Example
+///
+/// ```
+/// // Prevent Villager from pocketing Dr Mario's first alt's Pill
+/// let slots = vec![1];
+/// param_config::set_villager_pocket_behavior(*FIGHTER_KIND_MARIOD, slots.clone(), 
+/// *WEAPON_KIND_MARIOD_DRCAPSULE,param_config::POCKET_BEHAVIOR_MISFIRE);
+/// ```
+pub extern "C" fn set_villager_pocket_behavior(kind: i32, slots: Vec<i32>, weapon_kind: i32, behavior: i32)
+{
+    update_int(kind,slots,(hash40("villager_pocket_behavior"),weapon_kind.abs() as u64),behavior);
+}
+
+#[no_mangle]
 /// Prevents Villager/Isabelle from pocketting a weapon if it spawned from a given fighter kind and slot
 ///
 /// # Arguments
@@ -631,7 +666,7 @@ pub extern "C" fn disable_kirby_copy(kind: i32, slots: Vec<i32>)
 /// ```
 pub extern "C" fn disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kind: i32)
 {
-    update_int(kind,slots,(hash40("villager_cant_pocket"),weapon_kind as u64),0);
+    set_villager_pocket_behavior(kind,slots,weapon_kind,POCKET_BEHAVIOR_MISFIRE);
 }
 
 #[no_mangle]

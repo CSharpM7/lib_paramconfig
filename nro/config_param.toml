@@ -70,6 +70,6 @@ param = "kirby_cant_copy"
 value = 0
 
 [[param_int]]
-param = "villager_cant_pocket"
+param = "villager_pocket_behavior"
 subparam = "mariod_drcapsule"
 value = 0

@@ -62,7 +62,7 @@ param = "kirby_cant_copy" #Prevents Kirby from copying the ability of a fighter 
 value = 0
 
 [[param_int]]
-param = "villager_cant_pocket" #Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`
+param = "villager_pocket_behavior" #Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`
 subparam = "koopajr_cannonball" #Kind of weapon to prevent being pocketed. if you set this to "", then every weapon kind under the fighter/slot will be included
 value = 0
 ```

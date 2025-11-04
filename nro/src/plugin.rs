@@ -108,7 +108,7 @@ pub unsafe fn update_param(
 
     let subparam_str = subparam_string.as_str();
     let mut subparam_hash = 0;
-    if p_param == "villager_cant_pocket" 
+    if p_param == "villager_pocket_behavior" 
     || p_param == "rosetta_cant_pocket" {
         if hash_str_to_u64(&subparam_string) != 0 {
             subparam_hash = (get_weapon_kind_from_string(&subparam_string).abs()) as u64;
@@ -160,7 +160,7 @@ pub unsafe fn update_param(
     else if p_param == "kirby_cant_copy" {
         print!("] kirby cant copy");
     }
-    else if p_param == "villager_cant_pocket" {
+    else if p_param == "villager_pocket_behavior" {
         print!("{}",format!("] villager cant pocket: {} ({})",subparam_string,index.1));
     }
     else if p_param == "rosetta_cant_pull" {
