@@ -55,10 +55,12 @@ lazy_static! {
     static ref HOOK_PARAMS: RwLock<bool> = RwLock::new(false);
     static ref HOOK_KIRBY: RwLock<bool> = RwLock::new(false);
     static ref HOOK_VILLAGER: RwLock<bool> = RwLock::new(false);
+    static ref HOOK_ROSETTA: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_ARTICLES: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_PARAMS: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_KIRBY: RwLock<bool> = RwLock::new(false);
     static ref IS_HOOKED_VILLAGER: RwLock<bool> = RwLock::new(false);
+    static ref IS_HOOKED_ROSETTA: RwLock<bool> = RwLock::new(false);
     static ref HASH_ANY: RwLock<u64> = RwLock::new(0);
 }
 
@@ -77,6 +79,9 @@ pub fn can_hook_kirby() -> bool {
 pub fn can_hook_villager() -> bool {
     return *HOOK_VILLAGER.read() && !is_hooked_villager();
 }
+pub fn can_hook_rosetta() -> bool {
+    return *HOOK_ROSETTA.read() && !is_hooked_rosetta();
+}
 pub fn is_hooked_articles() -> bool {
     return *IS_HOOKED_ARTICLES.read();
 }
@@ -88,6 +93,9 @@ pub fn is_hooked_kirby() -> bool {
 }
 pub fn is_hooked_villager() -> bool {
     return *IS_HOOKED_VILLAGER.read();
+}
+pub fn is_hooked_rosetta() -> bool {
+    return *IS_HOOKED_ROSETTA.read();
 }
 pub fn set_hash_any() {
     if *HASH_ANY.read() == 0 {
@@ -367,6 +375,25 @@ impl FighterParamModule {
         }
         return true;
     }
+
+    #[export_name = "FighterParamModule__can_rosetta_pull"]
+    pub extern "C" fn can_rosetta_pull(kind: i32, slot: i32, weapon_kind: i32) -> bool {
+        let mut manager = PARAM_MANAGER.read();
+        for params in &manager.params {
+            if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
+                if params.slots.contains(&slot) || params.has_all_slots {
+                    let article_hash = hash_str_to_u64("rosetta_cant_pull");
+                    if let Some(value) = params.get_int(article_hash,weapon_kind.abs() as u64) {
+                        return false;
+                    }
+                    else if let Some(value) = params.get_int(article_hash,0) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
 }
 
 #[no_mangle]
@@ -403,6 +430,10 @@ pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: 
     else if index.0 == hash40("villager_cant_pocket"){
         *HOOK_VILLAGER.write() = true;
         hook::install_villager();
+    }
+    else if index.0 == hash40("rosetta_cant_pull"){
+        *HOOK_ROSETTA.write() = true;
+        hook::install_rosetta();
     }
     else {
         *HOOK_PARAMS.write() = true;
@@ -602,3 +633,37 @@ pub extern "C" fn disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kin
 {
     update_int(kind,slots,(hash40("villager_cant_pocket"),weapon_kind as u64),0);
 }
+
+#[no_mangle]
+/// Prevents Rosalina from using Down Special (Gravitational Pull) on a weapon if it spawned from a given fighter kind and slot
+///
+/// # Arguments
+///
+/// * `kind` - Fighter kind, as commonly used like *FIGHTER_KIND_MARIOD.
+/// * `slots` - Array of effected slots
+/// * `weapon_kind` - Weapon kind. If this is 0, then all weapons spawned from kind/slots will be accounted for
+///
+/// # Example
+///
+/// ```
+/// // Prevent Villager from pocketing Dr Mario's first alt's Pill
+/// let slots = vec![1];
+/// param_config::disable_rosetta_pull(*FIGHTER_KIND_MARIOD, slots.clone(), *WEAPON_KIND_MARIOD_DRCAPSULE);
+/// ```
+pub extern "C" fn disable_rosetta_pull(kind: i32, slots: Vec<i32>, weapon_kind: i32)
+{
+    update_int(kind,slots,(hash40("rosetta_cant_pull"),weapon_kind as u64),0);
+}
+
+/// This flag is true if Rosalina has pulled the object
+///
+/// # Example
+///
+/// ```
+/// // Delete if pulled
+/// if WorkModule::is_flag(weapon.module_accessor, param_config::WEAPON_INSTANCE_WORK_ID_FLAG_ROSETTA_PULLED) {
+/// smash_script::notify_event_msc_cmd!(weapon, Hash40::new_raw(0x199c462b5d));
+/// }
+/// 
+/// ```
+pub const WEAPON_INSTANCE_WORK_ID_FLAG_ROSETTA_PULLED: i32 = 0x20000FFF;

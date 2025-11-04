@@ -13,6 +13,10 @@ use skyline::hooks::{
 };
 
 
+const RETURN_0: u64 = 0;
+const RETURN_1: u64 = 1;
+const RETURN_ORIGINAL: u64 = 2;
+
 static INT_OFFSET: usize = 0x4e53a0; // 13.0.3
 static FLOAT_OFFSET: usize = 0x4e53e0; // 13.0.3
 static ARTICLE_OFFSET: usize = 0x3a6670; // 13.0.3
@@ -21,7 +25,7 @@ static COPY_RESET_OFFSET: usize = 0xb96770;
 const VILLAGER_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0xdbb940;
 const ISABELLE_VTABLE_ONCE_PER_FIGHTER_FRAME_OFFSET: usize = 0x114c220;
 
-const READ_MELEE_MODE_OFFSET: usize = 0x1a2625c; //unused
+const ROSETTA_VTABLE_ON_SEARCH: usize = 0x10aa080+0x20;
 
 #[skyline::hook(offset=INT_OFFSET)]
 pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) -> i32 {
@@ -235,10 +239,54 @@ unsafe fn villager_cant_pocket(fighter: &mut Fighter, is_kirby: bool) {
     }
 }
 
-// Only used to set if we're in game
-#[skyline::hook(offset = 0x1a2625c, inline)]
-unsafe fn read_melee_mode(ctx: &mut skyline::hooks::InlineCtx) {
-    *super::IN_GAME.write() = true;
+#[skyline::hook(offset = ROSETTA_VTABLE_ON_SEARCH)]
+pub unsafe extern "C" fn rosetta_search(_vtable: u64, fighter: &mut Fighter, log: u64) -> u64 {
+    let module_accessor = fighter.battle_object.module_accessor;
+    let kind = fighter.battle_object.kind;
+    if kind == *FIGHTER_KIND_ROSETTA as u32 {
+        let custom_result = rosetta_cant_pull(fighter, log);
+        if custom_result != RETURN_ORIGINAL {return custom_result};
+    }
+    original!()(_vtable, fighter, log)
+}
+unsafe fn check_pull_target(fighter: &mut Fighter, object_id: u32) -> bool {
+    let object_boma = sv_battle_object::module_accessor(object_id);
+    let object_cat = utility::get_category(&mut *object_boma);
+    let object_kind = utility::get_kind(&mut *object_boma);
+    if object_cat == *BATTLE_OBJECT_CATEGORY_WEAPON {
+        let owner_id = WorkModule::get_int(object_boma, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
+        let owner_boma = sv_battle_object::module_accessor(owner_id);
+        let owner_kind = utility::get_kind(&mut *owner_boma);
+        let owner_slot = WorkModule::get_int(owner_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+
+        //if owner_kind is found in table
+        if FighterParamModule::has_kind(owner_kind) {
+            if !FighterParamModule::can_rosetta_pull(owner_kind,owner_slot,object_kind) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+unsafe fn rosetta_cant_pull(fighter: &mut Fighter, log: u64) -> u64 {
+    use wubor_utils::app::*;
+
+    let module_accessor = fighter.battle_object.module_accessor;
+    let status_kind = StatusModule::status_kind(module_accessor);
+    if status_kind == FIGHTER_STATUS_KIND_SPECIAL_LW
+    {
+        let collision_log = *(log as *const u64).add(0x10 / 0x8);
+        let collision_log = collision_log as *mut CollisionLogScuffed;
+        let collider_id = (*collision_log).opponent_object_id;
+        if collider_id == *BATTLE_OBJECT_ID_INVALID as u32 {return RETURN_ORIGINAL;}
+
+        if check_pull_target(fighter,collider_id) {
+            let object_boma = sv_battle_object::module_accessor(collider_id);
+            WorkModule::on_flag(object_boma, super::WEAPON_INSTANCE_WORK_ID_FLAG_ROSETTA_PULLED);
+            return RETURN_0;
+        }
+    }
+    return RETURN_ORIGINAL;
 }
 
 pub fn install_params() {
@@ -281,5 +329,14 @@ pub fn install_villager() {
         *super::IS_HOOKED_VILLAGER.write() = true;
 
         install_kirby();
+    }
+}
+pub fn install_rosetta() {
+    if super::can_hook_rosetta() {
+        println!("[libparam_config] Hooking Rosetta On Search Vtable");
+        skyline::install_hooks!(
+            rosetta_search
+        ); 
+        *super::IS_HOOKED_ROSETTA.write() = true;
     }
 }
