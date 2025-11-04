@@ -61,10 +61,28 @@ kinds = ["mariod_capsuleblock"]
 param = "kirby_cant_copy" #Prevents Kirby from copying the ability of a fighter `kind` if they are using a costume in `slots`
 value = 0
 
+# The following params can use the below values as settings:
+#0: Use original behavior
+#1: Weapon is ignored
+#2: Weapon is deleted upon hitting searchbox
+#3: Weapon is deleted upon hitting searchbox, fighter enters their end/failed state
+
+# The following functions are untested with the toml
 [[param_int]]
-param = "villager_pocket_behavior" #Prevents Villager, Isabelle, and Kirby from pocketing a weapon kind (denoted by `subparam`) if the weapon's owner is of `kind` and using a costume in `slot`
-subparam = "koopajr_cannonball" #Kind of weapon to prevent being pocketed. if you set this to "", then every weapon kind under the fighter/slot will be included
-value = 0
+param = "kirby_inhale_behavior" #Change the behavior of Kirby's inhale when this weapon kind (denoted by `subparam`) is involved (but only if the weapon's owner is of `kind` and using a costume in `slot`)
+subparam = "koopajr_cannonball" #Kind of weapon involved. if you set this to "", then every weapon kind under the fighter/slot will be included
+value = 2 #The cannonball will be deleted, but Kirby will continue to inhale
+
+[[param_int]]
+param = "villager_pocket_behavior" #Change the behavior of Villager, Isabelle, and Kirby's pocket special when this weapon kind (denoted by `subparam`) is involved (but only if the weapon's owner is of `kind` and using a costume in `slot`)
+subparam = "koopajr_cannonball" #Kind of weapon involved. if you set this to "", then every weapon kind under the fighter/slot will be included
+value = 3 #Villager will enter their failed state, and the cannonball will be deleted
+
+[[param_int]]
+param = "rosetta_pull_behavior" #Change the behavior of Rosalina's Gravitational Pull when this weapon kind (denoted by `subparam`) is involved (but only if the weapon's owner is of `kind` and using a costume in `slot`). param_config::WEAPON_INSTANCE_WORK_ID_FLAG_ROSETTA_PULLED will be set to true regardless of the behavior setting
+subparam = "koopajr_cannonball" #Kind of weapon involved. if you set this to "", then every weapon kind under the fighter/slot will be included
+value = 1 #Gravitational Pull will ignore Cannonball. Note that Rosa has no failstate, so using 3 here will act the same as using 2.
+
 ```
 
 # lib_paramconfig
@@ -90,10 +108,13 @@ Index: (hash40(""),hash40("")) for param/subparam hashes. For common params, the
 Value: Value for the param. Keep in mind that the `_mul` functions will multiply the original rather than set a new value.
 
 ```
-param_config::disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kind: i32)
 param_config::disable_kirby_copy(kind: i32, slots: Vec<i32>)
 param_config::set_article_use_type(kind: i32, use_type: i32)
+param_config::set_kirby_inhale_behavior(kind: i32, slots: Vec<i32>, weapon_kind: i32, behavior: i32)
+param_config::set_villager_pocket_behavior(kind: i32, slots: Vec<i32>, weapon_kind: i32, behavior: i32)
+param_config::set_rosetta_pocket_behavior(kind: i32, slots: Vec<i32>, weapon_kind: i32, behavior: i32)
 ```
 
 Weapon kind: Weapon Kind to prevent being pocketed. If this is 0, then all weapons spawned from kind/slots will be accounted for
 Use_type: USETYPE const (ie *ARTICLE_USETYPE_FINAL);
+Behavior: Use a `param_config::POCKET_BEHAVIOR_...` const as the argument. Details are located in the toml example. The rust analyzer will also provide you with the details of each constant as outlined in lib.rs.

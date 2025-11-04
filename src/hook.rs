@@ -164,7 +164,8 @@ unsafe extern "C" fn kirby_search(_vtable: u64, fighter: &mut Fighter, log: u64)
             let custom_result = villager_pocket_search(fighter, log,true);
             if custom_result != RETURN_ORIGINAL {return custom_result};
         }
-        else if status_kind == *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_LOOP {
+        else if status_kind == *FIGHTER_STATUS_KIND_SPECIAL_N
+        || status_kind == *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_LOOP {
             let custom_result = kirby_inhale_search(fighter, log, true);
             if custom_result != RETURN_ORIGINAL {return custom_result};
         }
@@ -231,20 +232,8 @@ unsafe fn villager_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool
     return RETURN_ORIGINAL;
 }
 
-unsafe fn inhale_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool, is_inhale: bool) -> u64 {
-    use wubor_utils::app::*;
-
-    let collision_log = *(log as *const u64).add(0x10 / 0x8);
-    let collision_log = collision_log as *mut CollisionLogScuffed;
-    let collider_id = (*collision_log).opponent_object_id;
-    if collider_id == *BATTLE_OBJECT_ID_INVALID as u32 {return RETURN_ORIGINAL;}
-
-    let pocket_behavior = check_inhale_pocket_target(collider_id, is_inhale);
-    if pocket_behavior == super::POCKET_BEHAVIOR_ORIGINAL {return RETURN_ORIGINAL;}
-    if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {return RETURN_0;}
-
-    //Destroy weapon//
-    let weapon_boma = sv_battle_object::module_accessor(collider_id);
+unsafe fn destroy_weapon_id(object_id: u32) {
+    let weapon_boma = sv_battle_object::module_accessor(object_id);
     let pos = *PostureModule::pos(weapon_boma);
     EffectModule::req(
         weapon_boma,
@@ -261,30 +250,46 @@ unsafe fn inhale_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool, 
     use smash_script::*;
     let weapon = get_weapon_common_from_accessor(&mut *weapon_boma);
     smash_script::notify_event_msc_cmd!(weapon, Hash40::new_raw(0x199c462b5d));
+}
+
+unsafe fn inhale_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool, is_inhale: bool) -> u64 {
+    use wubor_utils::app::*;
+
+    let collision_log = *(log as *const u64).add(0x10 / 0x8);
+    let collision_log = collision_log as *mut CollisionLogScuffed;
+    let collider_id = (*collision_log).opponent_object_id;
+    if collider_id == *BATTLE_OBJECT_ID_INVALID as u32 {return RETURN_ORIGINAL;}
+
+    let pocket_behavior = check_inhale_pocket_target(collider_id, is_inhale);
+    if pocket_behavior == super::POCKET_BEHAVIOR_ORIGINAL {return RETURN_ORIGINAL;}
+    else if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {return RETURN_0;}
+
+    destroy_weapon_id(collider_id);
     
-    if pocket_behavior == super::POCKET_BEHAVIOR_IGNORE {
+    if pocket_behavior == super::POCKET_BEHAVIOR_DELETE {
         return RETURN_0;
     }
-    
-    let module_accessor = fighter.battle_object.module_accessor;
-    let status_kind = StatusModule::status_kind(module_accessor);
-    if pocket_behavior == super::POCKET_BEHAVIOR_MISFIRE {
-        let mut next_status = *FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_FAILURE;
-        if !is_inhale {
-            if is_kirby {
-                if status_kind == *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_SEARCH {
-                    next_status = *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_FAILURE;
-                }
-                else if status_kind == *FIGHTER_KIRBY_STATUS_KIND_SHIZUE_SPECIAL_N_SEARCH {
-                    next_status = *FIGHTER_KIRBY_STATUS_KIND_SHIZUE_SPECIAL_N_FAILURE;
+    else if pocket_behavior == super::POCKET_BEHAVIOR_MISFIRE {
+        let module_accessor = fighter.battle_object.module_accessor;
+        let status_kind = StatusModule::status_kind(module_accessor);
+        if pocket_behavior == super::POCKET_BEHAVIOR_MISFIRE {
+            let mut next_status = *FIGHTER_MURABITO_STATUS_KIND_SPECIAL_N_FAILURE;
+            if !is_inhale {
+                if is_kirby {
+                    if status_kind == *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_SEARCH {
+                        next_status = *FIGHTER_KIRBY_STATUS_KIND_MURABITO_SPECIAL_N_FAILURE;
+                    }
+                    else if status_kind == *FIGHTER_KIRBY_STATUS_KIND_SHIZUE_SPECIAL_N_SEARCH {
+                        next_status = *FIGHTER_KIRBY_STATUS_KIND_SHIZUE_SPECIAL_N_FAILURE;
+                    }
                 }
             }
+            else {
+                next_status = *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_END;
+            }
+            StatusModule::change_status_request_from_script(module_accessor, next_status, false);
+            return RETURN_0;
         }
-        else {
-            next_status = *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_END;
-        }
-        StatusModule::change_status_request_from_script(module_accessor, next_status, false);
-        return RETURN_0;
     }
     return RETURN_ORIGINAL;
 }
@@ -294,12 +299,12 @@ pub unsafe extern "C" fn rosetta_search(_vtable: u64, fighter: &mut Fighter, log
     let module_accessor = fighter.battle_object.module_accessor;
     let kind = fighter.battle_object.kind;
     if kind == *FIGHTER_KIND_ROSETTA as u32 {
-        let custom_result = rosetta_cant_pull(fighter, log);
+        let custom_result = rosetta_pull_behavior(fighter, log);
         if custom_result != RETURN_ORIGINAL {return custom_result};
     }
     original!()(_vtable, fighter, log)
 }
-unsafe fn check_pull_target(fighter: &mut Fighter, object_id: u32) -> bool {
+unsafe fn check_pull_target(object_id: u32) -> i32 {
     let object_boma = sv_battle_object::module_accessor(object_id);
     let object_cat = utility::get_category(&mut *object_boma);
     let object_kind = utility::get_kind(&mut *object_boma);
@@ -309,16 +314,17 @@ unsafe fn check_pull_target(fighter: &mut Fighter, object_id: u32) -> bool {
         let owner_kind = utility::get_kind(&mut *owner_boma);
         let owner_slot = WorkModule::get_int(owner_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
 
+        WorkModule::on_flag(object_boma, super::WEAPON_INSTANCE_WORK_ID_FLAG_ROSETTA_PULLED);
         //if owner_kind is found in table
         if FighterParamModule::has_kind(owner_kind) {
-            if !FighterParamModule::can_rosetta_pull(owner_kind,owner_slot,object_kind) {
-                return true;
+            if let Some(new_behavior) = FighterParamModule::get_rosetta_pull_behavior(owner_kind,owner_slot,object_kind) {
+                return new_behavior;
             }
         }
     }
-    return false;
+    return super::POCKET_BEHAVIOR_ORIGINAL;
 }
-unsafe fn rosetta_cant_pull(fighter: &mut Fighter, log: u64) -> u64 {
+unsafe fn rosetta_pull_behavior(fighter: &mut Fighter, log: u64) -> u64 {
     use wubor_utils::app::*;
 
     let module_accessor = fighter.battle_object.module_accessor;
@@ -330,11 +336,11 @@ unsafe fn rosetta_cant_pull(fighter: &mut Fighter, log: u64) -> u64 {
         let collider_id = (*collision_log).opponent_object_id;
         if collider_id == *BATTLE_OBJECT_ID_INVALID as u32 {return RETURN_ORIGINAL;}
 
-        if check_pull_target(fighter,collider_id) {
-            let object_boma = sv_battle_object::module_accessor(collider_id);
-            WorkModule::on_flag(object_boma, super::WEAPON_INSTANCE_WORK_ID_FLAG_ROSETTA_PULLED);
-            return RETURN_0;
-        }
+        let pull_behavior = check_pull_target(collider_id);
+        if pull_behavior == super::POCKET_BEHAVIOR_ORIGINAL {return RETURN_ORIGINAL;}
+        if pull_behavior == super::POCKET_BEHAVIOR_IGNORE {return RETURN_0;}
+        
+        destroy_weapon_id(collider_id);
     }
     return RETURN_ORIGINAL;
 }

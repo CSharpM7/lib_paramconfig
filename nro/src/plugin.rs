@@ -163,7 +163,7 @@ pub unsafe fn update_param(
     else if p_param == "villager_pocket_behavior" {
         print!("{}",format!("] villager cant pocket: {} ({})",subparam_string,index.1));
     }
-    else if p_param == "rosetta_cant_pull" {
+    else if p_param == "rosetta_pull_behavior" {
         print!("{}",format!("] Rosalina cant pull: {} ({})",subparam_string,index.1));
     }
     else{

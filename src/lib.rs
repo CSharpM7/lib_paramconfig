@@ -363,7 +363,10 @@ impl FighterParamModule {
         for params in &manager.params {
             if (params.kind == kind) {
                 let target_hash = hash_str_to_u64("kirby_inhale_behavior");
-                if let Some(value) = params.get_int(target_hash,weapon_kind as u64){
+                if let Some(value) = params.get_int(target_hash,weapon_kind.abs() as u64){
+                    return Some(value);
+                }
+                else if let Some(value) = params.get_int(target_hash,0){
                     return Some(value);
                 }
             }
@@ -376,12 +379,18 @@ impl FighterParamModule {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind) {
-                let target_hash = hash_str_to_u64("villager_pocket_behavior");
-                if let Some(value) = params.get_int(target_hash,weapon_kind as u64){
+                let param_hash = hash_str_to_u64("villager_pocket_behavior");
+                if let Some(value) = params.get_int(param_hash,weapon_kind.abs() as u64){
+                    return Some(value);
+                }
+                else if let Some(value) = params.get_int(param_hash,0){
                     return Some(value);
                 }
                 let dep_hash = hash_str_to_u64("villager_cant_pocket");
-                if let Some(value) = params.get_int(dep_hash,weapon_kind as u64) {
+                if let Some(value) = params.get_int(dep_hash,weapon_kind.abs() as u64) {
+                    return Some(POCKET_BEHAVIOR_MISFIRE);
+                }
+                else if let Some(value) = params.get_int(dep_hash,0) {
                     return Some(POCKET_BEHAVIOR_MISFIRE);
                 }
             }
@@ -389,23 +398,24 @@ impl FighterParamModule {
         return None;
     }
 
-    #[export_name = "FighterParamModule__can_rosetta_pull"]
-    pub extern "C" fn can_rosetta_pull(kind: i32, slot: i32, weapon_kind: i32) -> bool {
+    #[export_name = "FighterParamModule__get_rosetta_pull_behavior"]
+    pub extern "C" fn get_rosetta_pull_behavior(kind: i32, slot: i32, weapon_kind: i32) -> Option<i32> {
         let mut manager = PARAM_MANAGER.read();
         for params in &manager.params {
             if (params.kind == kind || params.kind == *FIGHTER_KIND_ALL) {
                 if params.slots.contains(&slot) || params.has_all_slots {
-                    let article_hash = hash_str_to_u64("rosetta_cant_pull");
-                    if let Some(value) = params.get_int(article_hash,weapon_kind.abs() as u64) {
-                        return false;
+                    println!("has dude");
+                    let param_hash = hash_str_to_u64("rosetta_pull_behavior");
+                    if let Some(value) = params.get_int(param_hash,weapon_kind.abs() as u64) {
+                        return Some(value);
                     }
-                    else if let Some(value) = params.get_int(article_hash,0) {
-                        return false;
+                    else if let Some(value) = params.get_int(param_hash,0) {
+                        return Some(value);
                     }
                 }
             }
         }
-        return true;
+        return None;
     }
 }
 
@@ -449,15 +459,17 @@ pub extern "C" fn update_int(kind: i32, slots: Vec<i32>,index: (u64,u64),value: 
         *HOOK_ARTICLES.write() = true;
         hook::install_articles();
     }
-    else if index.0 == hash40("kirby_cant_copy"){
+    else if index.0 == hash40("kirby_cant_copy")
+    || index.0 == hash40("kirby_inhale_behavior") {
         *HOOK_KIRBY.write() = true;
         hook::install_kirby();
     }
-    else if index.0 == hash40("villager_pocket_behavior"){
+    else if index.0 == hash40("villager_pocket_behavior")
+    || index.0 == hash40("villager_cant_pocket") {
         *HOOK_VILLAGER.write() = true;
         hook::install_villager();
     }
-    else if index.0 == hash40("rosetta_cant_pull"){
+    else if index.0 == hash40("rosetta_pull_behavior"){
         *HOOK_ROSETTA.write() = true;
         hook::install_rosetta();
     }
@@ -640,7 +652,8 @@ pub extern "C" fn disable_kirby_copy(kind: i32, slots: Vec<i32>)
 }
 
 #[no_mangle]
-/// Determines what Kirby will do when attempting to inhale this weapon. Dedede and Kirby's Dedede Ability will be unaffected.
+/// Determines what Kirby will do when attempting to inhale this weapon.
+/// Dedede, Wario, and Kirby's relevant copy abilities won't be affected
 ///
 /// # Arguments
 ///
@@ -718,13 +731,14 @@ pub extern "C" fn disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kin
 /// # Example
 ///
 /// ```
-/// // Prevent Villager from pocketing Dr Mario's first alt's Pill
+/// // Prevent Rosa from pulling Dr Mario's first alt's Pill
 /// let slots = vec![1];
-/// param_config::disable_rosetta_pull(*FIGHTER_KIND_MARIOD, slots.clone(), *WEAPON_KIND_MARIOD_DRCAPSULE);
+/// param_config::set_rosetta_pull_behavior(*FIGHTER_KIND_MARIOD, slots.clone(), 
+/// *WEAPON_KIND_MARIOD_DRCAPSULE,param_config::POCKET_BEHAVIOR_MISFIRE);
 /// ```
-pub extern "C" fn disable_rosetta_pull(kind: i32, slots: Vec<i32>, weapon_kind: i32)
+pub extern "C" fn set_rosetta_pull_behavior(kind: i32, slots: Vec<i32>, weapon_kind: i32, behavior: i32)
 {
-    update_int(kind,slots,(hash40("rosetta_cant_pull"),weapon_kind as u64),0);
+    update_int(kind,slots,(hash40("rosetta_pull_behavior"),weapon_kind as u64),behavior);
 }
 
 /// This flag is true if Rosalina has pulled the object
