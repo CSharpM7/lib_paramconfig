@@ -600,5 +600,5 @@ pub extern "C" fn disable_kirby_copy(kind: i32, slots: Vec<i32>)
 /// ```
 pub extern "C" fn disable_villager_pocket(kind: i32, slots: Vec<i32>, weapon_kind: i32)
 {
-    update_int(kind,slots,(hash40("villager_cant_pocket"),weapon_kind.abs() as u64),0);
+    update_int(kind,slots,(hash40("villager_cant_pocket"),weapon_kind as u64),0);
 }

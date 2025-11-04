@@ -174,7 +174,6 @@ unsafe fn check_pockets(fighter: &mut Fighter, object_id: u32) -> bool {
     let object_cat = utility::get_category(&mut *object_boma);
     let object_kind = utility::get_kind(&mut *object_boma);
     if object_cat == *BATTLE_OBJECT_CATEGORY_WEAPON {
-
         let owner_id = WorkModule::get_int(object_boma, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
         let owner_boma = sv_battle_object::module_accessor(owner_id);
         let owner_kind = utility::get_kind(&mut *owner_boma);
