@@ -176,7 +176,7 @@ unsafe extern "C" fn kirby_search(_vtable: u64, fighter: &mut Fighter, log: u64)
 unsafe fn kirby_inhale_search(fighter: &mut Fighter, log: u64, is_kirby: bool) -> u64 {
     let module_accessor = fighter.battle_object.module_accessor;
     let status_kind = StatusModule::status_kind(module_accessor);
-    if (is_kirby && status_kind == *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_LOOP) 
+    if (is_kirby && (status_kind == *FIGHTER_STATUS_KIND_SPECIAL_N || status_kind == *FIGHTER_KIRBY_STATUS_KIND_SPECIAL_N_LOOP))
     {
         return inhale_pocket_search(fighter,log, is_kirby, true);
     }
