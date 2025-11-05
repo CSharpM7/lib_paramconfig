@@ -30,6 +30,7 @@ use std::{
 use parking_lot::RwLock;
 use lazy_static::lazy_static;
 mod hook;
+mod app;
 
 pub fn hash_str_to_u64(param: &str) -> u64
 {

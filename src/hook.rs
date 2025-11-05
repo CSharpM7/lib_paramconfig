@@ -253,7 +253,7 @@ unsafe fn destroy_weapon_id(object_id: u32) {
 }
 
 unsafe fn inhale_pocket_search(fighter: &mut Fighter, log: u64, is_kirby: bool, is_inhale: bool) -> u64 {
-    use wubor_utils::app::*;
+    use crate::app::*;
 
     let collision_log = *(log as *const u64).add(0x10 / 0x8);
     let collision_log = collision_log as *mut CollisionLogScuffed;
@@ -325,7 +325,7 @@ unsafe fn check_pull_target(object_id: u32) -> i32 {
     return super::POCKET_BEHAVIOR_ORIGINAL;
 }
 unsafe fn rosetta_pull_behavior(fighter: &mut Fighter, log: u64) -> u64 {
-    use wubor_utils::app::*;
+    use crate::app::*;
 
     let module_accessor = fighter.battle_object.module_accessor;
     let status_kind = StatusModule::status_kind(module_accessor);
