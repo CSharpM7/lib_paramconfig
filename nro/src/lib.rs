@@ -1,8 +1,3 @@
-
-#![feature(
-    concat_idents,
-    proc_macro_hygiene
-)]
 #![allow(
     non_snake_case,
     unused,
