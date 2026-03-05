@@ -36,6 +36,11 @@ param = "run_speed_max"
 subparam = ""
 value = 2.0
 
+[[attribute_mul]]
+param = "scale"
+subparam = ""
+value = 1.5
+
 [[param_float]]
 param = "param_drcapsule"
 subparam = "gravity_accel"

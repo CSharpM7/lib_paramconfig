@@ -17,6 +17,8 @@ const RETURN_0: u64 = 0;
 const RETURN_1: u64 = 1;
 const RETURN_ORIGINAL: u64 = 2;
 
+const INVALID_COLOR: i32 = -2;
+
 static INT_OFFSET: usize = 0x4e53a0; // 13.0.3
 static FLOAT_OFFSET: usize = 0x4e53e0; // 13.0.3
 static ARTICLE_OFFSET: usize = 0x3a6670; // 13.0.3
@@ -29,6 +31,44 @@ const VILLAGER_VTABLE_ON_SEARCH: usize = 0xdbcf60+0x20; //isabelle is the same
 
 const ROSETTA_VTABLE_ON_SEARCH: usize = 0x10aa080+0x20;
 
+unsafe fn get_color(module_accessor: &mut BattleObjectModuleAccessor) -> i32 {
+    let mut entry_id: u32 = 0;
+
+    //Not bothering with items
+    if utility::get_category(module_accessor) != *BATTLE_OBJECT_CATEGORY_FIGHTER
+    && utility::get_category(module_accessor) != *BATTLE_OBJECT_CATEGORY_WEAPON {
+        return INVALID_COLOR;
+    }
+
+    //If the game isn't ready, sv_battle_object::entry_id will crash
+    //So we'll have to do it the old fashion way...which likely will do nothing
+    //sv_battle_object::entry_id also crashes for articles on init?
+    
+    if utility::get_category(module_accessor) == *BATTLE_OBJECT_CATEGORY_WEAPON {
+        let owner_id = WorkModule::get_int(module_accessor, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
+        if sv_battle_object::is_active(owner_id) {
+            let owner_boma = sv_battle_object::module_accessor(owner_id);
+            entry_id = WorkModule::get_int(owner_boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
+        }
+        else {
+            return INVALID_COLOR;
+        }
+    }
+    else {
+        if !sv_information::is_ready_go() {
+            entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
+        }
+        else {
+            entry_id = sv_battle_object::entry_id((*module_accessor).battle_object_id) as u32;
+        }
+    }
+    
+    let info = smash::app::lua_bind::FighterManager::get_fighter_information(singletons::FighterManager(), smash::app::FighterEntryID(entry_id as i32));
+    let color = smash::app::lua_bind::FighterInformation::fighter_color(info) as i32;
+
+    return color;
+}
+
 #[skyline::hook(offset=INT_OFFSET)]
 pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) -> i32 {
     let original_value = original!()(module, param_type, param_hash);
@@ -36,15 +76,18 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
     let mut module_accessor = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let module_accessor_reference = &mut *module_accessor;
     let id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let mut slot = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+    let mut slot = get_color(&mut *module_accessor);
+    if slot == INVALID_COLOR { return original_value; }
 
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
     if utility::get_category(module_accessor_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
         fighter_kind *= -1;
+        /*
         let owner_id = WorkModule::get_int(module_accessor, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
         if sv_battle_object::is_active(owner_id) {
             slot = WorkModule::get_int(sv_battle_object::module_accessor(owner_id), *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
         }
+        */
     }
 
     if FighterParamModule::has_kind(fighter_kind)
@@ -69,7 +112,8 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
     let mut module_accessor = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let module_accessor_reference = &mut *module_accessor;
     let id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let mut slot = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+    let mut slot = get_color(&mut *module_accessor);
+    if slot == INVALID_COLOR { return original_value; }
 
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
     if utility::get_category(module_accessor_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
@@ -203,6 +247,7 @@ unsafe fn check_inhale_pocket_target(object_id: u32, is_inhale: bool) -> i32 {
         let owner_boma = sv_battle_object::module_accessor(owner_id);
         let owner_kind = utility::get_kind(&mut *owner_boma);
         let owner_slot = WorkModule::get_int(owner_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+        if owner_slot == INVALID_COLOR { return super::POCKET_BEHAVIOR_ORIGINAL; }
 
         //if owner_kind is found in table
         if FighterParamModule::has_kind(owner_kind) {
@@ -313,6 +358,7 @@ unsafe fn check_pull_target(object_id: u32) -> i32 {
         let owner_boma = sv_battle_object::module_accessor(owner_id);
         let owner_kind = utility::get_kind(&mut *owner_boma);
         let owner_slot = WorkModule::get_int(owner_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+        if owner_slot == INVALID_COLOR { return super::POCKET_BEHAVIOR_ORIGINAL; }
 
         WorkModule::on_flag(object_boma, super::WEAPON_INSTANCE_WORK_ID_FLAG_ROSETTA_PULLED);
         //if owner_kind is found in table
