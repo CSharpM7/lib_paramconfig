@@ -92,12 +92,6 @@ pub unsafe fn get_param_int_64_hook(module: u64, param_type: u64, param_hash: u6
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
     if utility::get_category(module_accessor_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
         fighter_kind *= -1;
-        /*
-        let owner_id = WorkModule::get_int(module_accessor, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
-        if sv_battle_object::is_active(owner_id) {
-            slot = WorkModule::get_int(sv_battle_object::module_accessor(owner_id), *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
-        }
-        */
     }
 
     if FighterParamModule::has_kind(fighter_kind)
@@ -128,12 +122,6 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
     if utility::get_category(module_accessor_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
         fighter_kind *= -1;
-        /*
-        let owner_id = WorkModule::get_int(module_accessor, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
-        if sv_battle_object::is_active(owner_id) {
-            slot = WorkModule::get_int(sv_battle_object::module_accessor(owner_id), *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
-        }
-        */
     }
 
     if FighterParamModule::has_kind(fighter_kind)
@@ -164,10 +152,6 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
     if utility::get_category(module_accessor_reference) == *BATTLE_OBJECT_CATEGORY_WEAPON {
         fighter_kind *= -1;
-        let owner_id = WorkModule::get_int(module_accessor, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
-        if sv_battle_object::is_active(owner_id) {
-            slot = WorkModule::get_int(sv_battle_object::module_accessor(owner_id), *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
-        }
     }
 
     if FighterParamModule::has_kind(fighter_kind)
