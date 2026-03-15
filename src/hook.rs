@@ -1,11 +1,5 @@
-use {
-    smash::{
-        hash40,
-        app::{lua_bind::*, *},
-        lib::lua_const::*
-    }
-};
 use super::*;
+use smash::app::lua_bind::*;
 use skyline::hooks::{
     getRegionAddress, 
     Region, 
@@ -65,7 +59,7 @@ unsafe fn get_color(module_accessor: &mut BattleObjectModuleAccessor) -> i32 {
         }
     }
     
-    let info = smash::app::lua_bind::FighterManager::get_fighter_information(singletons::FighterManager(), smash::app::FighterEntryID(entry_id as i32));
+    let info = smash::cpp::root::app::lua_bind::FighterManager::get_fighter_information(singletons::FighterManager(), smash::app::FighterEntryID(entry_id as i32));
     let color = smash::app::lua_bind::FighterInformation::fighter_color(info) as i32;
 
     return color;

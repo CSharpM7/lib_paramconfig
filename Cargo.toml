@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 skyline = { git = "https://github.com/ultimate-research/skyline-rs.git" }
-skyline_smash = { git = "https://github.com/WuBoytH/skyline-smash.git", features = ["weak_l2cvalue"] }
+skyline_smash = { git = "https://github.com/ultimate-research/skyline-smash.git" }
 smash_script = { git = "https://github.com/WuBoytH/smash-script.git", branch = "development" }
 smash_rs = { git = "https://github.com/WuBoytH/smash-rs", package = "smash" }
 smash_singletons = { git = "https://github.com/WuBoytH/smash_singletons.git" }
