@@ -27,41 +27,34 @@ const VILLAGER_VTABLE_ON_SEARCH: usize = 0xdbcf60+0x20; //isabelle is the same
 
 const ROSETTA_VTABLE_ON_SEARCH: usize = 0x10aa080+0x20;
 
-unsafe fn get_color(module_accessor: &mut BattleObjectModuleAccessor) -> i32 {
-    let mut entry_id: u32 = 0;
-
-    //Not bothering with items
-    if utility::get_category(module_accessor) != *BATTLE_OBJECT_CATEGORY_FIGHTER
-    && utility::get_category(module_accessor) != *BATTLE_OBJECT_CATEGORY_WEAPON {
-        return INVALID_COLOR;
-    }
+unsafe fn get_costume_slot(module_accessor: *mut BattleObjectModuleAccessor) -> i32 {
+    let entry_id: u32;
+    let mut color = INVALID_COLOR;
 
     //If the game isn't ready, sv_battle_object::entry_id will crash
     //So we'll have to do it the old fashion way...which likely will do nothing
     //sv_battle_object::entry_id also crashes for articles on init?
-    
-    if utility::get_category(module_accessor) == *BATTLE_OBJECT_CATEGORY_WEAPON {
+    let player_boma = module_accessor;
+    if utility::get_category(&mut *module_accessor) == *BATTLE_OBJECT_CATEGORY_WEAPON {
         let owner_id = WorkModule::get_int(module_accessor, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
         if sv_battle_object::is_active(owner_id) {
             let owner_boma = sv_battle_object::module_accessor(owner_id);
-            entry_id = WorkModule::get_int(owner_boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
+            let player_boma = owner_boma;
         }
         else {
             return INVALID_COLOR;
         }
     }
-    else {
-        if !sv_information::is_ready_go() {
-            entry_id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
-        }
-        else {
-            entry_id = sv_battle_object::entry_id((*module_accessor).battle_object_id) as u32;
-        }
+    if !sv_information::is_ready_go() {
+        let entry_id = WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
+        return WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
     }
-    
+    let entry_id = sv_battle_object::entry_id((*player_boma).battle_object_id) as u32;
+
+    //This method crashes for PT during entry, which is why it's down here instead of being the sole method of getting current slot
     let info = smash::cpp::root::app::lua_bind::FighterManager::
     get_fighter_information(singletons::FighterManager(), smash::app::FighterEntryID(entry_id as i32));
-    let color = smash::app::lua_bind::FighterInformation::fighter_color(info) as i32;
+    color = smash::app::lua_bind::FighterInformation::fighter_color(info) as i32;
 
     return color;
 }
@@ -81,7 +74,7 @@ pub unsafe fn get_param_int_64_hook(module: u64, param_type: u64, param_hash: u6
     let mut module_accessor = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let module_accessor_reference = &mut *module_accessor;
     let id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let mut slot = get_color(&mut *module_accessor);
+    let mut slot = get_costume_slot(module_accessor);
     if slot == INVALID_COLOR { return original_value; }
 
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
@@ -111,7 +104,7 @@ pub unsafe fn get_param_int_hook(module: u64, param_type: u64, param_hash: u64) 
     let mut module_accessor = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let module_accessor_reference = &mut *module_accessor;
     let id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let mut slot = get_color(&mut *module_accessor);
+    let mut slot = get_costume_slot(module_accessor);
     if slot == INVALID_COLOR { return original_value; }
 
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
@@ -141,7 +134,7 @@ pub unsafe fn get_param_float_hook(module: u64, param_type: u64, param_hash: u64
     let mut module_accessor = *((module as *mut u64).offset(1)) as *mut BattleObjectModuleAccessor;
     let module_accessor_reference = &mut *module_accessor;
     let id = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as usize;
-    let mut slot = get_color(&mut *module_accessor);
+    let mut slot = get_costume_slot(module_accessor);
     if slot == INVALID_COLOR { return original_value; }
 
     let mut fighter_kind = utility::get_kind(module_accessor_reference);
@@ -421,10 +414,10 @@ pub fn install_params() {
     if super::can_hook_params() {
         println!("[libparam_config] Hooking GetParam functions");
         skyline::install_hooks!(
-            set_entry_id_early,
+            set_entry_id_early, //PT Issues
             get_param_int_hook,
             get_param_float_hook,
-            get_param_int_64_hook,
+            get_param_int_64_hook, //hmmm...
             //read_melee_mode
         );
         *super::IS_HOOKED_PARAMS.write() = true;

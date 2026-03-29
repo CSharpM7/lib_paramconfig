@@ -66,6 +66,16 @@ subparam = "buoyancy_max"
 value = 8.0
 
 [[param_int]]
+param = "param_motion"
+subparam = "motion_share"
+value = 2
+
+[[param_int]]
+param = "param_motion"
+subparam = "waist_size"
+value = 2
+
+[[param_int]]
 param = "article_use_type"
 value = 1
 kinds = ["mariod_capsuleblock"]

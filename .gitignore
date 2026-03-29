@@ -8,3 +8,7 @@ Cargo.lock
 *.lnk
 .devcontainer/Dockerfile
 .devcontainer/Dockerfile
+nro/install.ps1
+nro/install.ps1
+nro/build.ps1
+src/hook - Copy.rs
