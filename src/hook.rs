@@ -45,18 +45,20 @@ unsafe fn get_costume_slot(module_accessor: *mut BattleObjectModuleAccessor) -> 
             return INVALID_COLOR;
         }
     }
-    if !sv_information::is_ready_go() {
-        let entry_id = WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
-        return WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
-    }
+    let entry_id = WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
+    return WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
+    /*
+    //This method crashes for a handful of things (PT during entry, Kazuya Devil Blaster, Phoenix?)
+    //Though this is a more accurate way of getting color rather than assuming FIGHTER_INSTANCE_WORK_ID_INT_COLOR has been set already
+    //I guess that's life...
+
     let entry_id = sv_battle_object::entry_id((*player_boma).battle_object_id) as u32;
 
-    //This method crashes for PT during entry, which is why it's down here instead of being the sole method of getting current slot
     let info = smash::cpp::root::app::lua_bind::FighterManager::
     get_fighter_information(singletons::FighterManager(), smash::app::FighterEntryID(entry_id as i32));
     color = smash::app::lua_bind::FighterInformation::fighter_color(info) as i32;
-
     return color;
+    */
 }
 
 
