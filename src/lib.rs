@@ -423,7 +423,7 @@ pub const POCKET_BEHAVIOR_ORIGINAL: i32 = 0x0;
 /// Inhale/Pocket/Pull will ignore this weapon
 pub const POCKET_BEHAVIOR_IGNORE: i32 = 0x1;
 
-/// Pocket will delete the weapon, Villager won't change statuses
+/// Pocket/Pull will delete the weapon, Villager/Rosa won't change statuses
 pub const POCKET_BEHAVIOR_DELETE: i32 = 0x2;
 
 /// Pocket will delete the weapon, but Villager will go into their Missed state
