@@ -42,11 +42,11 @@ pub unsafe fn install_parameters() {
     param_config::disable_villager_pocket(CUSTOM_FIGHTER_KIND, slots.clone(), CLONED_ARTICLE_KIND);
 
     //If using cargo skyline listen, you'll see these parameters get applied to your game during the initial boot
-    param_floats.push((hash40("dash_speed"),0 as u64, 2.0));
     param_ints.push((hash40("jump_count_max"),0 as u64, 4));
-    param_floats.push((hash40("jump_initial_y"),0 as u64, 12.0));
-    param_floats.push((hash40("jump_y"),0 as u64, 15.0));
-    param_floats.push((hash40("mini_jump_y"),0 as u64, 4.0));
+    param_attributes.push((hash40("dash_speed"),0 as u64, 2.0));
+    param_attributes.push((hash40("jump_initial_y"),0 as u64, 2.0));
+    param_attributes.push((hash40("jump_y"),0 as u64, 2.0));
+    param_attributes.push((hash40("mini_jump_y"),0 as u64, 2.0));
 
     for p in param_ints {
         param_config::update_int_2(CUSTOM_FIGHTER_KIND, slots.clone(), p);
