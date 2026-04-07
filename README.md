@@ -87,7 +87,7 @@ value = 1 #Gravitational Pull will ignore Cannonball. Note that Rosa has no fail
 
 # lib_paramconfig
 
-lib_paramconfig also supports changes via your own skyline plugin.
+lib_paramconfig also supports changes via your own skyline plugin. An example of this can be found [here](https://github.com/CSharpM7/lib_paramconfig/tree/main/example_plugin).
 
 ## Setup
 Your `Cargo.toml` needs to include this dependency:
