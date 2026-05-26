@@ -116,5 +116,7 @@ param_config::set_rosetta_pocket_behavior(kind: i32, slots: Vec<i32>, weapon_kin
 ```
 
 Weapon kind: Weapon Kind to prevent being pocketed. If this is 0, then all weapons spawned from kind/slots will be accounted for
+
 Use_type: USETYPE const (ie *ARTICLE_USETYPE_FINAL);
+
 Behavior: Use a `param_config::POCKET_BEHAVIOR_...` const as the argument. Details are located in the toml example. The rust analyzer will also provide you with the details of each constant as outlined in lib.rs.

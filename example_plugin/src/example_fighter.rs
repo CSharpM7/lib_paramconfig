@@ -23,7 +23,7 @@ lazy_static! {
 pub static mut CLONED_ARTICLE_KIND: i32 = 0; 
 
 pub unsafe fn install_parameters() {
-    CLONED_ARTICLE_KIND = 2; //Normally you'd set this to the result of smashline::clone_weapon()
+    CLONED_ARTICLE_KIND = *WEAPON_KIND_MARIO_FIREBALL; //This should be the weapon kind of whatever you are cloning. NOT the article generate ID.
     let CUSTOM_FIGHTER_KIND: i32 = *smash::lib::lua_const::FIGHTER_KIND_MARIOD;
 
     let slot = (*MOD_SLOTS.read().unwrap()).to_vec();
