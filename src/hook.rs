@@ -34,18 +34,18 @@ unsafe fn get_costume_slot(module_accessor: *mut BattleObjectModuleAccessor) -> 
     //If the game isn't ready, sv_battle_object::entry_id will crash
     //So we'll have to do it the old fashion way...which likely will do nothing
     //sv_battle_object::entry_id also crashes for articles on init?
-    let player_boma = module_accessor;
+    let mut player_boma = module_accessor;
     if utility::get_category(&mut *module_accessor) == *BATTLE_OBJECT_CATEGORY_WEAPON {
         let owner_id = WorkModule::get_int(module_accessor, *WEAPON_INSTANCE_WORK_ID_INT_ACTIVATE_FOUNDER_ID) as u32;
         if sv_battle_object::is_active(owner_id) {
             let owner_boma = sv_battle_object::module_accessor(owner_id);
-            let player_boma = owner_boma;
+            player_boma = owner_boma;
         }
         else {
             return INVALID_COLOR;
         }
     }
-    let entry_id = WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
+    //let entry_id = WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as u32;
     return WorkModule::get_int(player_boma, *FIGHTER_INSTANCE_WORK_ID_INT_COLOR);
     /*
     //This method crashes for a handful of things (PT during entry, Kazuya Devil Blaster, Phoenix?)
